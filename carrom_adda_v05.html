@@ -448,7 +448,7 @@ const PARAM_GROUPS = [
     ['pocketSpeed', 'Fast pieces skip the hole',  0.0, 1.0, 0.05,  0.7],
   ]],
   ['Table (marble)', [
-    ['mu',          'Sliding friction μ',         0.0, 0.03,0.0002,0.01],
+    ['mu',          'Sliding friction μ',         0.0, 0.03,0.0002,0.005],
     ['drag',        'Viscous drag (1/s)',         0.0, 0.5, 0.005, 0.0],
     ['spinDecay',   'Spin decay (rad/s²)',        0,   200, 1,     25],
     ['vStop',       'Stop speed (m/s)',           0.0, 0.05,0.0005,0.004],
@@ -510,7 +510,7 @@ const saveP = () => lsSet('carrom.work.v3', { preset:activePreset, params:P });
 const saveUserPresets = () => lsSet('carrom.presets.v1', userPresets);
 
 // ---------- game options / current shot ----------
-const SDEF = { jitter:true, jAng:0.25, jPow:2.0, slow:false, ff:false, ticks:false, guide:true, sound:true, diff:'medium', diffB:'medium', vs:'ai', board:'sage' };
+const SDEF = { jitter:true, jAng:0.30, jPow:3.0, slow:false, ff:false, ticks:false, guide:true, sound:true, diff:'medium', diffB:'medium', vs:'ai', board:'slate' };
 const saved = lsGet('carrom.game.v3', {});
 if (!saved.tOff) saved.ticks = false;                 // spin ticks became off-by-default; reset older saved choices once
 const S = Object.assign({}, SDEF, saved);
@@ -1962,7 +1962,7 @@ function buildSettings(){
   const bsel = el('select', { onchange:() => { S.board = bsel.value; saveS(); } });
   [['sage', 'Sage'], ['jade', 'Jade'], ['slate', 'Slate'], ['classic', 'Classic dark']].forEach(([v, t]) => bsel.appendChild(el('option', { value:v, text:t })));
   syncers.push(() => bsel.value = S.board); bsel.value = S.board;
-  s.appendChild(el('div', { class:'row' }, [el('label', { text:'Board colour' }), bsel, el('span')]));
+  s.appendChild(el('div', { class:'row' }, [el('label', { text:'Board color' }), bsel, el('span')]));
   check(c1, 'Aim error (both players)', () => S.jitter, v => S.jitter = v);
   slider(s, 'Error: angle ± (°)', 0, 3, 0.05, () => S.jAng, v => { S.jAng = v; saveS(); });
   slider(s, 'Error: power ± (%)', 0, 10, 0.1, () => S.jPow, v => { S.jPow = v; saveS(); });
