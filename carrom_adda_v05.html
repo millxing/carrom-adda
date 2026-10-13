@@ -371,6 +371,7 @@
       <div>
         <div class="lab">Table physics</div>
         <select id="startPreset"></select>
+        <button id="startPhys" class="wide" style="margin-top:8px">Physics settings…</button>
       </div>
       <div>
         <div class="lab">Rules</div>
@@ -1194,6 +1195,14 @@ function placeCentre(colors){
     if (d < best){ best = d; tgt = p; }
   }
   if (!tgt){ tgt = addPiece(colors[0], 0, 0); colors = colors.slice(1); }
+  // a piece resting only partly on the spot gets centred on it, and anything crowding it is pushed clear
+  tgt.x = tgt.y = 0; tgt.vx = tgt.vy = tgt.w = 0;
+  for (const p of pieces()){
+    if (p === tgt || !p.alive) continue;
+    const d = Math.hypot(p.x, p.y), R = p.r + tgt.r + 1e-4;
+    if (d < R){ const u = d > 1e-9 ? 1/d : 0; p.x = u ? p.x*u*R : R; p.y = u ? p.y*u*R : 0; }
+  }
+  settle();
   tgt.layers = tgt.layers.concat(colors);
   tgt.moved = false;
 }
@@ -2040,6 +2049,7 @@ function buildChrome(){
   snd.onclick = () => { S.sound = !S.sound; sfx.on = S.sound; saveS(); refreshSnd(); snd.blur(); };
   refreshSnd(); sfx.on = S.sound;
   $('setBtn').onclick = () => { $('setBtn').blur(); openSettings(); };
+  $('startPhys').onclick = () => { $('startPhys').blur(); openSettings(); };
   $('setClose').onclick = closeSettings;
 }
 
