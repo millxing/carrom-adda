@@ -1954,11 +1954,6 @@ function layout(){
   else { mode = 'stack'; b = Math.min(W - 2*g, Math.max(hFit, 320)); }
   app.className = mode + (mode === 'stack' && W < 640 ? ' narrow' : '');
   app.style.setProperty('--board', Math.floor(b) + 'px');
-  if (mode !== layout.last){                       // on a mode change: show the key guide only if the side panel can hold it
-    layout.last = mode;
-    const kd = $('keysd'), R = $('panelR'); kd.open = true;
-    if (mode !== 'stack' && R.scrollHeight > R.clientHeight + 4) kd.open = false;
-  }
 }
 
 // ---- physics settings drawer (hidden by default) ----
