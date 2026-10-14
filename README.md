@@ -4,10 +4,10 @@ Single-player carrom (or AI vs AI) against an AI opponent, played in the browser
 
 ## Play
 
-Open `carrom_adda_v05.html` in any modern browser. No install, no server, no network needed.
+Open `carrom_adda_v06.html` in any modern browser. No install, no server, no network needed.
 (`sounds/score.mp3` is optional: if it is missing the pocket sound is synthesised.)
 
-- Mouse: click the board to aim, drag the striker along your baseline.
+- Mouse: click the board to aim, drag the striker along your baseline, scroll the wheel over the board (Shift coarse, Alt fine) or drag the power bar on the board's left edge to set power. Optional: shoot when the bar is released (physics settings drawer).
 - Keyboard:
 
   | Keys | Action |
@@ -27,7 +27,8 @@ Open `carrom_adda_v05.html` in any modern browser. No install, no server, no net
 
 ## Files
 
-- `carrom_adda_v05.html` - the game (everything is in this one file)
+- `carrom_adda_v06.html` - the game (everything is in this one file)
+- `carrom_adda_v05.html` - the previous version, without the mouse power controls
 - `index.html` - redirects to the game (for GitHub Pages)
 - `sounds/score.mp3` - pocket sound (optional)
 
