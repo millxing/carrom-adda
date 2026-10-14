@@ -233,6 +233,10 @@
   .card .dev{font:400 18px/1 var(--display);color:var(--brass);opacity:.8;margin-top:6px}
   .card p{color:var(--dim);margin:10px 0 4px;font-size:14.5px}
   .card .lab{font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin:20px 0 8px}
+  #start .card{max-width:740px}
+  .cols .full,.cols .opp{grid-column:1/-1}
+  #start.aiai .cols .opp{grid-column:auto}
+  .physrow{display:flex;gap:8px}.physrow select{flex:1;min-width:0}.physrow button{flex:0 0 auto;padding:0 18px}
   .seg{display:flex;gap:6px}
   .seg button{flex:1;padding:11px 0}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px 22px}
@@ -364,20 +368,21 @@
     <div class="dev" lang="hi">कैरम अड्डा</div>
     <p>Clear your nine pieces before the AI clears its own.</p>
     <div class="cols">
-      <div>
+      <div class="full">
         <div class="lab">Players</div>
         <div class="seg" id="modeSeg"></div>
       </div>
-      <div>
+      <div id="boxB" class="hidden">
+        <div class="lab" id="oppLabB">AI 1 (bottom)</div>
+        <div class="seg" id="diffSegB"></div>
+      </div>
+      <div class="opp">
         <div class="lab" id="oppLab">Opponent</div>
         <div class="seg" id="diffSeg"></div>
-        <div class="lab hidden" id="oppLabB">AI 1 (bottom)</div>
-        <div class="seg hidden" id="diffSegB"></div>
       </div>
-      <div>
+      <div class="full">
         <div class="lab">Table physics</div>
-        <select id="startPreset"></select>
-        <button id="startPhys" class="wide" style="margin-top:8px">Physics settings…</button>
+        <div class="physrow"><select id="startPreset"></select><button id="startPhys">Physics settings…</button></div>
       </div>
       <div>
         <div class="lab">Rules</div>
@@ -2033,7 +2038,7 @@ function buildChrome(){
   const refreshMode = () => {
     const aa = S.vs === 'aiai';
     mbtns.forEach((b, i) => b.classList.toggle('on', ['ai', 'aiai'][i] === S.vs));
-    ['oppLabB', 'diffSegB'].forEach(id => $(id).classList.toggle('hidden', !aa));
+    $('boxB').classList.toggle('hidden', !aa); $('start').classList.toggle('aiai', aa);
     $('oppLab').textContent = aa ? 'AI 2 (top, black unless it breaks)' : 'Opponent';
     $('oppLabB').textContent = 'AI 1 (bottom)';
     $('startBtn').textContent = aa ? 'Watch' : 'Play';
