@@ -189,6 +189,7 @@
   .kcaps .plus{color:var(--dim);font:600 12px var(--mono)}
   .kdesc{font-size:14px;line-height:1.25;font-weight:600}
   .kdesc small{display:block;color:var(--dim);font-size:12.5px;font-weight:400;margin-top:2px}
+  .kdesc small b{color:var(--brass2);font-weight:600;margin-right:4px}
   .kmouse{grid-column:1/-1;font-size:13px;color:var(--dim);border-top:1px dashed var(--line);padding-top:10px}
   .kmouse b{color:var(--fg);font-weight:600}
   .rgrid{display:flex;flex-direction:column;gap:12px}
@@ -345,14 +346,11 @@
       <details id="keysd" class="keysd" open>
       <summary class="eyebrow">Keyboard controls</summary>
       <div class="keys" id="keys">
-        <div class="krow"><span class="kcaps"><kbd data-k="ArrowLeft">←</kbd><kbd data-k="ArrowRight">→</kbd></span><span class="kdesc">Aim<small>0.1° per press</small></span></div>
-        <div class="krow"><span class="kcaps"><kbd data-k="ArrowUp">↑</kbd><kbd data-k="ArrowDown">↓</kbd></span><span class="kdesc">Power<small>0.05 m/s per press</small></span></div>
-        <div class="krow"><span class="kcaps"><kbd data-k="KeyA">A</kbd><kbd data-k="KeyD">D</kbd></span><span class="kdesc">Slide striker<small>1 cm per press</small></span></div>
-        <div class="krow"><span class="kcaps"><kbd data-k="Space" class="wide">Space</kbd></span><span class="kdesc">Shoot<small>Enter works too</small></span></div>
-        <div class="krow"><span class="kcaps"><kbd data-k="KeyP">P</kbd></span><span class="kdesc">Pause / resume<small>freezes the AI too</small></span></div>
-        <div class="krow wide"><span class="kcaps"><kbd data-k="Shift" class="wide">Shift</kbd><span class="plus">+</span><kbd>←</kbd><kbd>↑</kbd><kbd>A</kbd></span>
-          <span class="kdesc">Hold Shift for coarse steps<small>Any of the keys above, 10× bigger: 1° aim, 0.5 m/s power, 10 cm slide. Hold Alt (⌥) for fine steps.</small></span></div>
-        <div class="kmouse"><b>Mouse:</b> click the board to aim · drag the striker to slide it · scroll the wheel or drag the power bar on the left edge for power</div>
+        <div class="krow"><span class="kcaps"><kbd data-k="ArrowLeft">←</kbd><kbd data-k="ArrowRight">→</kbd></span><span class="kdesc">Aim<small><b>Keys</b> ← → turn the aim, 0.1° per press (Shift 1°, Alt 0.01°)</small><small><b>Mouse</b> click or drag on the board</small></span></div>
+        <div class="krow"><span class="kcaps"><kbd data-k="ArrowUp">↑</kbd><kbd data-k="ArrowDown">↓</kbd></span><span class="kdesc">Power<small><b>Keys</b> ↑ ↓ 0.05 m/s per press (Shift 0.5, Alt 0.01)</small><small><b>Mouse</b> scroll the wheel over the board, or drag the power bar on its left edge</small></span></div>
+        <div class="krow"><span class="kcaps"><kbd data-k="KeyA">A</kbd><kbd data-k="KeyD">D</kbd></span><span class="kdesc">Slide striker<small><b>Keys</b> A D move it along the baseline, 1 cm per press (Shift 10 cm, Alt 1 mm)</small><small><b>Mouse</b> drag the striker</small></span></div>
+        <div class="krow"><span class="kcaps"><kbd data-k="Space" class="wide">Space</kbd></span><span class="kdesc">Shoot<small><b>Keys</b> Space or Enter</small><small><b>Mouse</b> the Shoot button (or release the power bar, if enabled in settings)</small></span></div>
+        <div class="krow"><span class="kcaps"><kbd data-k="KeyP">P</kbd></span><span class="kdesc">Pause / resume<small><b>Keys</b> P (freezes the AI too)</small><small><b>Mouse</b> the ⏸ button</small></span></div>
       </div>
       </details>
     </div>
