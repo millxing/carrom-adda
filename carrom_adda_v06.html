@@ -490,6 +490,7 @@ const PARAM_GROUPS = [
     ['pocketD',     'Pocket Ø (m)',               0.02,0.12,0.0005,0.046],
     ['pocketInset', 'Pocket centre inset (m)',    0.0, 0.08,0.0005,0.022],
     ['pocketSpeed', 'Fast pieces skip the hole',  0.0, 1.0, 0.05,  0.7],
+    ['rackRot',     'Break rack rotation (°)',    -90, 90,  1,     45],
   ]],
   ['Table (marble)', [
     ['mu',          'Sliding friction μ',         0.0, 0.03,0.0002,0.005],
@@ -896,17 +897,17 @@ function gauss(){ let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v =
 // ---------- layouts ----------
 function clearPieces(){ bodies = bodies.filter(b => b.kind === 'striker'); }
 function addPiece(color, x, y){ const p = mkPiece(color, x, y); bodies.unshift(p); return p; }
-function rack(){
+function rack(breaker = 'human'){     // the rack is turned to face whoever breaks, so both see the same arrangement
   clearPieces();
-  const r = P.pieceD/2, g = 2*r + 0.0008;
+  const r = P.pieceD/2, g = 2*r + 0.0008, rot = P.rackRot*Math.PI/180 + (breaker === 'ai' ? Math.PI : 0);
   addPiece('red', 0, 0);
   for (let k = 0; k < 6; k++){
-    const a = k*Math.PI/3;
+    const a = k*Math.PI/3 + rot;
     addPiece(k%2 ? 'black' : 'white', Math.cos(a)*g, Math.sin(a)*g);
   }
   for (let i = 0; i < 12; i++){
     const a = i*Math.PI/6, rad = i%2 === 0 ? 2*g : Math.sqrt(3)*g;
-    addPiece(i%2 ? 'black' : 'white', Math.cos(a + Math.PI/6)*rad, Math.sin(a + Math.PI/6)*rad);
+    addPiece(i%2 ? 'black' : 'white', Math.cos(a + Math.PI/6 + rot)*rad, Math.sin(a + Math.PI/6 + rot)*rad);
   }
   settle();
 }
@@ -1282,7 +1283,7 @@ function startGame(first = 'human', rec = null){
   RR = rng((rec || REC).seed);
   falls.length = 0; pocketLog.length = 0; running = false;
   striker.alive = false;
-  rack();
+  rack(first);
   G.queen = 'board'; G.turn = first;
   PLAYERS[first].color = 'white'; PLAYERS[opponent(first)].color = 'black';      // the breaker plays white
   $('sub').textContent = `${nm('human')} (${PLAYERS.human.color}) vs ${nm('ai')} (${PLAYERS.ai.color})` + (rec ? ' · replay' : '');
@@ -2024,10 +2025,10 @@ function closeSettings(){
 function buildSettings(){
   const root = $('setbody'); root.innerHTML = '';
   const spec = {}; PARAM_GROUPS.forEach(g => g[1].forEach(p => spec[p[0]] = p));
-  const SIMPLE = ['mu','eSP','muSP','eWall','ePP','massRatio','pocketD','pocketSpeed','vFull','stackHold','stackRing'];
+  const SIMPLE = ['rackRot','mu','eSP','muSP','eWall','ePP','massRatio','pocketD','pocketSpeed','vFull','stackHold','stackRing'];
   const LABEL = { mu:'Table friction', eSP:'Striker ↔ piece bounce', eWall:'Cushion bounce', ePP:'Piece ↔ piece bounce',
                   muSP:'Striker ↔ piece friction (throw)', massRatio:'Striker weight (× piece)', pocketD:'Pocket size (m)', pocketSpeed:'Fast pieces skip the hole (0 = never)', vFull:'Soft-hit damping: bounce full at (m/s)',
-                  stackHold:'Stack topples above hit speed (m/s)', stackRing:'Toppled piece lands in striker ring (chance)' };
+                  stackHold:'Stack topples above hit speed (m/s)', stackRing:'Toppled piece lands in striker ring (chance)', rackRot:'Break rack rotation (°)' };
 
   // presets
   let s = section(root, 'Presets');
