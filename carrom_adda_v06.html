@@ -571,7 +571,7 @@ let RR = Math.random;            // game RNG: re-seeded for every game so a reco
 let running = false, paused = false, simT = 0, acc = 0, quiet = false;
 const pocketLog = [];      // {kind,color} for everything pocketed during the current shot
 const falls = [];
-const FALL_MS = 330;
+const FALL_MS = 450;
 const COLORS = { white:'#efe6d2', black:'#17171a', red:'#c7281f' };
 const TOTAL = { white:9, black:9, red:1 };
 const BASE_GAP = 0.024;                      // half-width of the baseline band (the marked lines sit at ±this from its centre)
@@ -838,11 +838,12 @@ function step(dt, list = bodies, log = pocketLog){
     for (const pc of pcs){
       const capR = pr*(1 - P.pocketSpeed*Math.min(1, Math.hypot(b.vx, b.vy)/4));
       if (Math.hypot(b.x - pc[0], b.y - pc[1]) < capR){
+        const fvx = b.vx, fvy = b.vy;
         b.alive = false; b.vx = b.vy = b.w = 0;
         for (const c of (b.layers || [b.color])) log.push({ kind:b.kind, color:c });
         if (real){
           sfx.drop();
-          falls.push({ b:{ kind:b.kind, color:b.color, layers:b.layers, r:b.r, ri:b.ri, ang:b.ang }, x:b.x, y:b.y, pcx:pc[0], pcy:pc[1], pr, t0:performance.now() });
+          falls.push({ b:{ kind:b.kind, color:b.color, layers:b.layers, r:b.r, ri:b.ri, ang:b.ang }, vx:fvx, vy:fvy, x:b.x, y:b.y, pcx:pc[0], pcy:pc[1], pr, t0:performance.now() });
         }
         break;
       }
@@ -1144,6 +1145,25 @@ function draw(){
     drawRay(S.angle, 0.75, true);
   }
 
+  // pieces dropping into pockets: they tip over the rim, slide to the middle of the hole, shrink and darken as they sink.
+  // Drawn under the live bodies, so a striker sitting over the hole stays on top of them.
+  const nowMs = performance.now();
+  for (let i = falls.length - 1; i >= 0; i--){
+    const f = falls[i], u = (nowMs - f.t0)/FALL_MS;
+    if (u >= 1){ falls.splice(i, 1); continue; }
+    const e = Math.min(1, u*1.7), pull = e*e*(3 - 2*e), q = u*u*(3 - 2*u);
+    const x = f.x + (f.pcx - f.x)*pull + f.vx*0.06*Math.sin(Math.PI*Math.min(1, u*1.5)), y = f.y + (f.pcy - f.y)*pull + f.vy*0.06*Math.sin(Math.PI*Math.min(1, u*1.5));
+    const [sx, sy] = toS(x, y);
+    const sc = 1 - 0.6*q;
+    ctx.save();
+    ctx.translate(sx, sy); ctx.scale(sc, sc); ctx.translate(-sx, -sy);
+    f.b.ang += 0.12*(1 - u);
+    drawBody(f.b, sx, sy);
+    ctx.fillStyle = `rgba(0,0,0,${Math.min(0.95, q*1.05)})`;
+    ctx.beginPath(); ctx.arc(sx, sy, f.b.r*k, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
   // bodies
   for (const b of bodies){
     if (!b.alive) continue;
@@ -1154,26 +1174,6 @@ function draw(){
     const [sx, sy] = toS(st.x, st.y);
     ctx.strokeStyle = 'rgba(229,96,77,.95)'; ctx.lineWidth = Math.max(2, 0.004*k);
     ctx.beginPath(); ctx.arc(sx, sy, st.r*k*1.12, 0, TAU); ctx.stroke();
-  }
-  // pieces dropping into pockets
-  const nowMs = performance.now();
-  for (let i = falls.length - 1; i >= 0; i--){
-    const f = falls[i], u = (nowMs - f.t0)/FALL_MS;
-    if (u >= 1){ falls.splice(i, 1); continue; }
-    const e = u*u*(3 - 2*u), q = u*u;
-    const x = f.x + (f.pcx - f.x)*e, y = f.y + (f.pcy - f.y)*e;
-    const [sx, sy] = toS(x, y), [cx, cy] = toS(f.pcx, f.pcy);
-    ctx.save();
-    ctx.beginPath(); ctx.arc(cx, cy, f.pr*k*1.02, 0, TAU); ctx.clip();
-    const sc = 1 - 0.55*q;
-    ctx.translate(sx, sy); ctx.scale(sc, sc); ctx.translate(-sx, -sy);
-    f.b.ang += 0.25;
-    drawBody(f.b, sx, sy);
-    ctx.restore();
-    ctx.save();
-    ctx.beginPath(); ctx.arc(cx, cy, f.pr*k*1.02, 0, TAU); ctx.clip();
-    ctx.fillStyle = `rgba(0,0,0,${Math.min(0.92, q*1.1)})`; ctx.fillRect(cx - f.pr*k*2, cy - f.pr*k*2, f.pr*k*4, f.pr*k*4);
-    ctx.restore();
   }
 }
 
@@ -1190,6 +1190,7 @@ const $ = id => document.getElementById(id);
 // phase: menu | aim (human turn) | think + aiAnim (AI turn) | moving | between | over
 // queen: 'board' | 'pending' (pocketed this turn, must be covered) | 'human' | 'ai' (covered by)
 const G = { phase:'menu', turn:'human', queen:'board', epoch:0, think:null, anim:null, aiAI:false, replay:null, diff:{ human:'medium', ai:'medium' } };
+let recP = null;                                  // physics settings as of the last recorded shot
 let REC = null, lastRec = null, Pbak = null, RSPD = 1, aiWho = 'ai';     // current recording, replay speed, whose move the AI is searching
 // names: slot 'human' is "You" against the AI, or "AI 1" in AI vs AI
 const isAI = p => G.aiAI || p === 'ai';
@@ -1281,7 +1282,7 @@ function startGame(first = 'human', rec = null){
     REC = { v:1, id:Date.now(), date:new Date().toISOString(), seed:(Math.random()*4294967296) >>> 0, params:Object.assign({}, P),
             first, vs:S.vs, diff:Object.assign({}, G.diff), shots:[], winner:null, pts:0 };
   }
-  RR = rng((rec || REC).seed);
+  RR = rng((rec || REC).seed); recP = REC ? REC.params : null;
   falls.length = 0; pocketLog.length = 0; running = false;
   striker.alive = false;
   rack(first);
@@ -1316,7 +1317,11 @@ function launch(dA, pw){
 function fire(sigA, sigP){
   const em = errMult(S.power);
   const dA = gauss()*sigA*em, pw = Math.max(0.05, S.power*(1 + gauss()*sigP*em/100));
-  if (REC) REC.shots.push({ who:G.turn, s:S.s, angle:S.angle, power:S.power, spin:S.spin, dA, pw });
+  if (REC){
+    const sh = { who:G.turn, s:S.s, angle:S.angle, power:S.power, spin:S.spin, dA, pw };
+    if (!sameParams(P, recP)){ sh.P = Object.assign({}, P); recP = sh.P; }      // physics tweaked mid-game: the replay needs it
+    REC.shots.push(sh);
+  }
   launch(dA, pw);
 }
 function shootHuman(){
@@ -1448,6 +1453,7 @@ function replayTurn(who){
     setPhase('over'); return;
   }
   R.i++;
+  if (sh.P){ P = Object.assign({}, DEFAULTS, sh.P); applyParams(); }
   const sp = RSPD;
   G.anim = { t0:performance.now(), d1:Math.max(350, Math.abs(sh.s - S.s)/0.3*1000)/sp, d2:Math.max(350, Math.abs(sh.angle - S.angle)/45*1000)/sp, hold:350/sp,
              s0:S.s, a0:S.angle, s1:sh.s, a1:sh.angle, rec:sh };
