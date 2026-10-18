@@ -19,7 +19,7 @@ Open `carrom_adda_v07.html` in any modern browser. No install and no server. Pla
   | Hold Alt / ⌥ | Finer steps |
   | Space or Enter | Shoot |
 - Win the hand-guess toss to break; the breaker plays white.
-- Pocket a piece and shoot again. Cover the queen with one of your own pieces on the next shot.
+- Pocket a piece and shoot again. The queen only counts once you have already pocketed one of your own pieces; before that she goes back to the centre. Cover the queen with one of your own pieces on the next shot.
 - Winner scores 1 point per opponent piece left, plus 3 for a queen they covered.
 - Every game is recorded automatically. Start screen > Recordings & replays: watch at 1-8x, save a game as a `.json` file, load one back in. Replays re-run the physics from the recorded seed and shots, so they are exact.
 - Online: Start screen > Play a friend online. One player hosts and sends the invite link or 5-character code; the other opens it or types the code. The host's table physics and shot error apply to both, the guest sees the board turned around so they always shoot from the bottom, and a game can be restarted as a rematch. Only the shots travel between the browsers (the physics is deterministic); after each shot the shooter's final board is adopted by the other side, so browsers that round differently can't drift apart. Connection is peer to peer (WebRTC) and may fail behind strict firewalls.
@@ -29,7 +29,7 @@ Open `carrom_adda_v07.html` in any modern browser. No install and no server. Pla
 ## Files
 
 - `carrom_adda_v07.html` - the game (everything is in this one file)
-- `carrom_adda_v06.html`, `carrom_adda_v05.html` - previous versions (v06 has no online play)
+- `carrom_adda_v06.html`, `carrom_adda_v05.html` - previous versions (v06 has no online play and lets the queen go down first)
 - `index.html` - redirects to the game (for GitHub Pages)
 - `sounds/score.mp3` - pocket sound (optional)
 

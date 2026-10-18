@@ -373,7 +373,7 @@
       <div class="eyebrow">Rules</div>
       <ul>
         <li>Pocket one of yours and you shoot again.</li>
-        <li class="q">Pocket the queen, then cover her with one of yours on a <i>later</i> shot (same shot doesn’t count).</li>
+        <li class="q">Pocket the queen (after one of yours is down), then cover her with one of yours on a <i>later</i> shot (same shot doesn’t count).</li>
         <li>Queen or opponent pieces your shot leaves on or behind their baseline go back to the centre, stacked. Hard hits topple stacks.</li>
         <li>Winner scores 1 per opponent piece left, +3 for a covered queen.</li>
       </ul>
@@ -435,7 +435,7 @@
           <div class="lab">Rules</div>
           <ul>
             <li>Pocket one of your pieces and you shoot again.</li>
-            <li class="q">Pocket the red queen, then cover her with one of your own pieces on a <i>later</i> shot (both on the same shot doesn’t count), or she goes back to the centre.</li>
+            <li class="q">Pocket the red queen (only after one of your own pieces is down, or she goes back to the centre), then cover her with one of your own pieces on a <i>later</i> shot (both on the same shot doesn’t count), or she goes back to the centre.</li>
             <li>If your shot leaves the queen or an opponent’s piece touching or behind their baseline, it goes back to the centre, stacked on whatever is there.</li>
             <li>A stack rides along on a very soft hit, but topples when hit harder.</li>
             <li>Winner scores one point per opponent piece left on the board, plus 3 for a covered queen.</li>
@@ -1426,6 +1426,9 @@ function resolveShot(log){
     if (G.queen === 'pending'){
       if (own > 0){ G.queen = me; msgs.push(you ? 'Queen covered!' : `${nm(me)} covered the queen`); keep = true; }
       else { ret('red'); G.queen = 'board'; msgs.push('Queen not covered: back to the centre'); }
+    } else if (q && 9 - ownLeft(me) - own === 0){     // the queen may only go down once you have pocketed a piece of your own (an earlier shot)
+      ret('red'); msgs.push(you ? 'Queen pocketed before any of your pieces: back to the centre' : `${nm(me)} took the queen too early: back to the centre`);
+      if (own > 0){ keep = true; msgs.push(you ? 'Pocketed. Shoot again' : `${nm(me)} pocketed and shoots again`); }
     } else if (q){                                  // pocketing queen and your own piece together does not cover her
       G.queen = 'pending'; keep = true;
       msgs.push(you ? 'Queen down. Cover her with your next shot' : `${nm(me)} took the queen and must cover`);
@@ -1760,7 +1763,7 @@ function evalOutcome(list, log, power = 0){
   if (foul) v -= 30;
   else {
     if (G.queen === 'pending') v += own > 0 ? 10 : -9;
-    else if (q) v += 6 + (aiLeft <= 1 ? 25 : 0);   // queen down but not yet covered; with one piece left she is the only useful pot
+    else if (q && 9 - aiLeft - own > 0) v += 6 + (aiLeft <= 1 ? 25 : 0);   // queen down but not yet covered; with one piece left she is the only useful pot
     if (own > 0) v += 4;                           // keeps the turn
     // clearing the last piece only wins once the queen is covered; otherwise the piece just comes back
     const covered = G.queen === 'ai' || G.queen === 'human' || (G.queen === 'pending' && own > 0);
