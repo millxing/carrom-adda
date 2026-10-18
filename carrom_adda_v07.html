@@ -522,7 +522,7 @@ const PARAM_GROUPS = [
     ['rackRot',     'Break rack rotation (°)',    -90, 90,  1,     45],
   ]],
   ['Table (marble)', [
-    ['mu',          'Sliding friction μ',         0.0, 0.05,0.00005,0.00035],
+    ['mu',          'Sliding friction μ',         0.0, 0.05,0.00005,0.0035],
     ['drag',        'Viscous drag (1/s)',         0.0, 0.5, 0.005, 0.0],
     ['spinDecay',   'Spin decay (rad/s²)',        0,   200, 1,     25],
     ['vStop',       'Stop speed (m/s)',           0.0, 0.05,0.0005,0.004],
@@ -559,8 +559,8 @@ PARAM_GROUPS.forEach(g => g[1].forEach(p => DEFAULTS[p[0]] = p[5]));
 const LAYOUT_KEYS = ['boardSize','baseOff','baseMargin','pieceD','ringOD','ringID','pocketD','pocketInset'];
 const BUILTIN_PRESETS = {
   'Tournament (default)': {},
-  'Slippery marble': { mu:0.005, spinDecay:15, ePP:0.93, eWall:0.6 },
-  'Sticky felt':     { mu:0.02, spinDecay:45, eWall:0.4, eWallS:0.45, vStop:0.006 },
+  'Slippery marble': { mu:0.001, spinDecay:15, ePP:0.93, eWall:0.6 },
+  'Sticky felt':     { mu:0.01, spinDecay:45, eWall:0.4, eWallS:0.45, vStop:0.006 },
   'Lively cushions': { eWall:0.8, eWallS:0.85, eSP:0.5, vFull:2 },
   'Heavy striker':   { massRatio:5, eSP:0.5, muSP:0.05 },
 };
