@@ -522,7 +522,7 @@ const PARAM_GROUPS = [
     ['rackRot',     'Break rack rotation (°)',    -90, 90,  1,     45],
   ]],
   ['Table (marble)', [
-    ['mu',          'Sliding friction μ',         0.0, 0.1, 0.0002,0.03],
+    ['mu',          'Sliding friction μ',         0.0, 0.05,0.00005,0.00035],
     ['drag',        'Viscous drag (1/s)',         0.0, 0.5, 0.005, 0.0],
     ['spinDecay',   'Spin decay (rad/s²)',        0,   200, 1,     25],
     ['vStop',       'Stop speed (m/s)',           0.0, 0.05,0.0005,0.004],
@@ -2059,12 +2059,15 @@ function section(parent, title, open = true){
   wrap.appendChild(el('h3', { text:title, onclick:() => wrap.classList.toggle('closed') }));
   parent.appendChild(wrap); return wrap;
 }
-function slider(parent, label, min, max, step, get, set, onChange){
+// mul: the panel shows the value times mul (e.g. table friction is shown ×100); get/set still deal in the real value
+function slider(parent, label, min, max, step, get, set, onChange, mul = 1){
+  min *= mul; max *= mul; step *= mul;
   const r = el('input', { type:'range', min, max, step });
   const n = el('input', { type:'number', step });
-  const upd = () => { r.value = get(); n.value = +(+get()).toFixed(5); };
-  r.addEventListener('input', () => { set(parseFloat(r.value)); n.value = +(+get()).toFixed(5); onChange && onChange(); });
-  n.addEventListener('change', () => { const v = parseFloat(n.value); if (!isNaN(v)){ set(v); upd(); onChange && onChange(); } });
+  const shown = () => +(get()*mul).toFixed(5);
+  const upd = () => { r.value = get()*mul; n.value = shown(); };
+  r.addEventListener('input', () => { set(parseFloat(r.value)/mul); n.value = shown(); onChange && onChange(); });
+  n.addEventListener('change', () => { const v = parseFloat(n.value); if (!isNaN(v)){ set(v/mul); upd(); onChange && onChange(); } });
   parent.appendChild(el('div', { class:'row' }, [el('label', { text:label }), r, n]));
   syncers.push(upd); upd();
   return r;
@@ -2284,6 +2287,7 @@ function closeSettings(){
 function buildSettings(){
   const root = $('setbody'); root.innerHTML = '';
   const spec = {}; PARAM_GROUPS.forEach(g => g[1].forEach(p => spec[p[0]] = p));
+  const SCALE = { mu:100 };                       // table friction is tiny, so the panel shows it ×100
   const SIMPLE = ['rackRot','mu','eSP','muSP','eWall','ePP','massRatio','pocketD','pocketSpeed','vFull','stackHold','stackRing'];
   const LABEL = { mu:'Table friction', eSP:'Striker ↔ piece bounce', eWall:'Cushion bounce', ePP:'Piece ↔ piece bounce',
                   muSP:'Striker ↔ piece friction (throw)', massRatio:'Striker weight (× piece)', pocketD:'Pocket size (m)', pocketSpeed:'Fast pieces skip the hole (0 = never)', vFull:'Soft-hit damping: bounce full at (m/s)',
@@ -2314,14 +2318,14 @@ function buildSettings(){
 
   // common knobs
   s = section(root, 'Physics');
-  for (const k of SIMPLE){ const p = spec[k]; slider(s, LABEL[k], p[2], p[3], p[4], () => P[k], v => { P[k] = v; }, changed); }
+  for (const k of SIMPLE){ const p = spec[k]; slider(s, LABEL[k], p[2], p[3], p[4], () => P[k], v => { P[k] = v; }, changed, SCALE[k]); }
 
   // everything else, collapsed
   for (const [title, items] of PARAM_GROUPS){
     const rest = items.filter(it => !SIMPLE.includes(it[0]));
     if (!rest.length) continue;
     const sec = section(root, 'Advanced · ' + title, false);
-    for (const [k, label, min, max, step] of rest) slider(sec, label, min, max, step, () => P[k], v => { P[k] = v; }, changed);
+    for (const [k, label, min, max, step] of rest) slider(sec, label, min, max, step, () => P[k], v => { P[k] = v; }, changed, SCALE[k]);
   }
 
   // game options
