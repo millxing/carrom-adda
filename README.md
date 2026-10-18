@@ -1,10 +1,10 @@
 # Carrom Adda
 
-Single-player carrom (or AI vs AI) against an AI opponent, played in the browser. Realistic 2-D rigid-disc physics with spin, a ring striker, cushion and piece friction, and tunable table settings.
+Carrom against an AI, AI vs AI, or a friend online (2 players over the internet), played in the browser. Realistic 2-D rigid-disc physics with spin, a ring striker, cushion and piece friction, and tunable table settings.
 
 ## Play
 
-Open `carrom_adda_v06.html` in any modern browser. No install, no server, no network needed.
+Open `carrom_adda_v07.html` in any modern browser. No install and no server. Playing the AI needs no network; online play loads PeerJS from a CDN when you use it.
 (`sounds/score.mp3` is optional: if it is missing the pocket sound is synthesised.)
 
 - Mouse: click the board to aim, drag the striker along your baseline, scroll the wheel over the board (Shift coarse, Alt fine) or drag the power bar on the board's left edge to set power. Optional: shoot when the bar is released (physics settings drawer).
@@ -22,13 +22,14 @@ Open `carrom_adda_v06.html` in any modern browser. No install, no server, no net
 - Pocket a piece and shoot again. Cover the queen with one of your own pieces on the next shot.
 - Winner scores 1 point per opponent piece left, plus 3 for a queen they covered.
 - Every game is recorded automatically. Start screen > Recordings & replays: watch at 1-8x, save a game as a `.json` file, load one back in. Replays re-run the physics from the recorded seed and shots, so they are exact.
+- Online: Start screen > Play a friend online. One player hosts and sends the invite link or 5-character code; the other opens it or types the code. The host's table physics and shot error apply to both, the guest sees the board turned around so they always shoot from the bottom, and a game can be restarted as a rematch. Only the shots travel between the browsers (the physics is deterministic); after each shot the shooter's final board is adopted by the other side, so browsers that round differently can't drift apart. Connection is peer to peer (WebRTC) and may fail behind strict firewalls.
 - Players: choose AI vs AI on the start screen to watch two AIs play, each with its own level.
 - Three AI levels. Physics presets and every tunable parameter are behind the ⚙ button.
 
 ## Files
 
-- `carrom_adda_v06.html` - the game (everything is in this one file)
-- `carrom_adda_v05.html` - the previous version, without the mouse power controls
+- `carrom_adda_v07.html` - the game (everything is in this one file)
+- `carrom_adda_v06.html`, `carrom_adda_v05.html` - previous versions (v06 has no online play)
 - `index.html` - redirects to the game (for GitHub Pages)
 - `sounds/score.mp3` - pocket sound (optional)
 
