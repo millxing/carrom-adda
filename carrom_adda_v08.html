@@ -39,7 +39,8 @@
   ::selection{background:var(--brass);color:#1a1200}
 
   /* ---------------- screens: game selection (#menu) and play (#app) ---------------- */
-  #menu{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;gap:26px;padding:clamp(24px,6vh,64px) 16px 24px;animation:fade .6s ease both}
+  #menu{position:relative;z-index:1;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;gap:26px;padding:clamp(24px,6vh,64px) 16px 24px;animation:fade .6s ease both}
+  #menuBg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}       /* under everything on the menu */
   #menu h1{margin:0;font:400 clamp(44px,8vw,72px)/1 var(--display);letter-spacing:.01em;color:var(--fg);text-align:center}
   #menu h1 span{color:var(--brass2)}
   .modes{display:grid;grid-template-columns:repeat(2,minmax(0,220px));gap:14px;width:100%;justify-content:center}
@@ -257,6 +258,7 @@
 </head>
 <body>
 <div id="menu">
+  <canvas id="menuBg" aria-hidden="true"></canvas>
   <h1>Carrom <span>Adda</span></h1>
   <div class="modes">
     <button id="mAI">Play vs AI</button>
@@ -2123,7 +2125,7 @@ function layout(){
 // '#menu' (game selection) or '#app' (the game)
 function showScreen(which){
   $('menu').classList.toggle('hidden', which !== 'menu'); $('app').classList.toggle('hidden', which === 'menu');
-  if (which === 'menu') menuPicture(); else { layout(); resize(); }
+  if (which === 'menu'){ menuPicture(); menuBg.start(); } else { menuBg.stop(); layout(); resize(); }
 }
 // the selection screen shows the racked board as a still picture
 function menuPicture(){
@@ -2345,6 +2347,80 @@ function buildChrome(){
   const markSpd = () => spd.forEach((b, i) => b.classList.toggle('on', [1, 2, 4, 8][i] === RSPD));
   markSpd();
 }
+
+// ====================================================================
+// MENU BACKGROUND: pieces and strikers drifting with no friction, bouncing off the window's edges (the cushions) and each other
+// ====================================================================
+const menuBg = (() => {
+  const c = $('menuBg'), g = c.getContext('2d'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let discs = [], raf = 0, last = 0, W = 0, Hh = 0;
+  function fit(){
+    const dpr = window.devicePixelRatio || 1; W = innerWidth; Hh = innerHeight;
+    c.width = Math.round(W*dpr); c.height = Math.round(Hh*dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const d of discs){ d.x = Math.min(Math.max(d.x, d.r), W - d.r); d.y = Math.min(Math.max(d.y, d.r), Hh - d.r); }
+  }
+  function seed(){
+    const u = Math.max(11, Math.min(22, Math.min(W, Hh)/45));               // piece radius (px); the striker is P.ringOD/P.pieceD bigger
+    const kinds = [...Array(6).fill('white'), ...Array(6).fill('black'), 'red', 'striker', 'striker'];
+    discs = [];
+    for (const k of kinds){
+      const r = k === 'striker' ? u*DEFAULTS.ringOD/DEFAULTS.pieceD : u;
+      let x, y, n = 0;
+      do { x = r + Math.random()*(W - 2*r); y = r + Math.random()*(Hh - 2*r); } while (n++ < 200 && discs.some(d => Math.hypot(d.x - x, d.y - y) < d.r + r + 4));
+      const a = Math.random()*TAU, v = 35 + Math.random()*45;                 // px/s: a slow drift
+      discs.push({ k, r, m:k === 'striker' ? DEFAULTS.massRatio : 1, x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, ang:Math.random()*TAU, w:(Math.random() - .5) });
+    }
+  }
+  function step(dt){
+    for (const d of discs){
+      d.x += d.vx*dt; d.y += d.vy*dt; d.ang += d.w*dt;
+      if (d.x < d.r){ d.x = d.r; d.vx = Math.abs(d.vx); } else if (d.x > W - d.r){ d.x = W - d.r; d.vx = -Math.abs(d.vx); }
+      if (d.y < d.r){ d.y = d.r; d.vy = Math.abs(d.vy); } else if (d.y > Hh - d.r){ d.y = Hh - d.r; d.vy = -Math.abs(d.vy); }
+    }
+    for (let i = 0; i < discs.length; i++) for (let j = i + 1; j < discs.length; j++){       // perfectly elastic: no energy is ever lost
+      const a = discs[i], b = discs[j], dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy), R = a.r + b.r;
+      if (dist >= R || dist < 1e-6) continue;
+      const nx = dx/dist, ny = dy/dist, ia = 1/a.m, ib = 1/b.m, push = (R - dist)/(ia + ib);
+      a.x -= nx*push*ia; a.y -= ny*push*ia; b.x += nx*push*ib; b.y += ny*push*ib;
+      const vn = (b.vx - a.vx)*nx + (b.vy - a.vy)*ny;
+      if (vn >= 0) continue;
+      const J = -2*vn/(ia + ib);
+      a.vx -= J*ia*nx; a.vy -= J*ia*ny; b.vx += J*ib*nx; b.vy += J*ib*ny;
+    }
+  }
+  function paint(){
+    g.clearRect(0, 0, W, Hh);
+    for (const d of discs){
+      if (d.k === 'striker'){
+        const ri = d.r*DEFAULTS.ringID/DEFAULTS.ringOD;
+        g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(d.x + d.r*.08, d.y + d.r*.1, d.r, 0, TAU); g.arc(d.x + d.r*.08, d.y + d.r*.1, ri, 0, TAU, true); g.fill('evenodd');
+        g.fillStyle = '#f4f4f1'; g.beginPath(); g.arc(d.x, d.y, d.r, 0, TAU); g.arc(d.x, d.y, ri, 0, TAU, true); g.fill('evenodd');
+        g.strokeStyle = 'rgba(0,0,0,.4)'; g.lineWidth = 1;
+        g.beginPath(); g.arc(d.x, d.y, d.r, 0, TAU); g.stroke(); g.beginPath(); g.arc(d.x, d.y, ri, 0, TAU); g.stroke();
+      } else {
+        g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(d.x + d.r*.18, d.y + d.r*.22, d.r, 0, TAU); g.fill();
+        g.fillStyle = COLORS[d.k]; g.beginPath(); g.arc(d.x, d.y, d.r, 0, TAU); g.fill();
+        g.strokeStyle = d.k === 'black' ? '#555' : 'rgba(0,0,0,.45)'; g.lineWidth = Math.max(1, d.r*.12);
+        g.beginPath(); g.arc(d.x, d.y, d.r*.62, 0, TAU); g.stroke();
+        g.beginPath(); g.arc(d.x, d.y, d.r, 0, TAU); g.stroke();
+      }
+    }
+  }
+  function tick(now){
+    step(Math.min((now - last)/1000, 0.05)); last = now; paint();
+    raf = requestAnimationFrame(tick);
+  }
+  window.addEventListener('resize', () => { if (W){ fit(); paint(); } });
+  return {
+    start(){
+      if (raf) return;
+      fit(); if (!discs.length) seed();
+      paint(); if (still) return;
+      last = performance.now(); raf = requestAnimationFrame(tick);
+    },
+    stop(){ cancelAnimationFrame(raf); raf = 0; },
+  };
+})();
 
 // ====================================================================
 // INIT
