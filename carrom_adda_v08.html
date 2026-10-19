@@ -2349,7 +2349,7 @@ function buildChrome(){
 }
 
 // ====================================================================
-// MENU BACKGROUND: pieces and strikers drifting with no friction, bouncing off the window's edges (the cushions) and each other
+// MENU BACKGROUND: pieces and the striker drifting with no friction, bouncing off the window's edges (the cushions) and each other
 // ====================================================================
 const menuBg = (() => {
   const c = $('menuBg'), g = c.getContext('2d'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2361,7 +2361,7 @@ const menuBg = (() => {
   }
   function seed(){
     const u = Math.max(11, Math.min(22, Math.min(W, Hh)/45));               // piece radius (px); the striker is P.ringOD/P.pieceD bigger
-    const kinds = [...Array(6).fill('white'), ...Array(6).fill('black'), 'red', 'striker', 'striker'];
+    const kinds = [...Array(6).fill('white'), ...Array(6).fill('black'), 'red', 'striker'];
     discs = [];
     for (const k of kinds){
       const r = k === 'striker' ? u*DEFAULTS.ringOD/DEFAULTS.pieceD : u;
