@@ -1235,6 +1235,7 @@ function startGame(first = 'human', rec = null, net = null){
   rack(first);
   G.queen = 'board'; G.turn = first;
   PLAYERS[first].color = 'white'; PLAYERS[opponent(first)].color = 'black';      // the breaker plays white
+  $('log').textContent = '';                       // each game (or replay) starts a fresh log
   toast(isYou(first) ? 'Your break: you play white' : G.mode === 'ai' || (G.mode === 'net' && !G.replay) ? `${nm(first)} breaks: you play black` : `${nm(first)} breaks and plays white`);
   beginTurn();
 }
