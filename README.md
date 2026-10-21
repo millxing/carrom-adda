@@ -4,7 +4,7 @@ Carrom against an AI, AI vs AI, or a friend online (2 players over the internet)
 
 ## Play
 
-Open `carrom_adda_v07.html` in any modern browser. No install and no server. Playing the AI needs no network; online play loads PeerJS from a CDN when you use it.
+Play at https://carromadda.org/ or open `index.html` in any modern browser. No install and no server. Playing the AI needs no network; online play loads PeerJS from a CDN when you use it.
 (`sounds/score.mp3` is optional: if it is missing the pocket sound is synthesised.)
 
 - Mouse: click the board to aim, drag the striker along your baseline, scroll the wheel over the board (Shift coarse, Alt fine) or drag the power bar on the board's left edge to set power. Optional: shoot when the bar is released (physics settings drawer).
@@ -28,8 +28,8 @@ Open `carrom_adda_v07.html` in any modern browser. No install and no server. Pla
 
 ## Files
 
-- `carrom_adda_v07.html` - the game (everything is in this one file)
-- `carrom_adda_v06.html`, `carrom_adda_v05.html` - previous versions (v06 has no online play and lets the queen go down first)
+- `index.html` - the game (everything is in this one file)
+- `archive/` - previous versions (v05-v07; sounds paths are not fixed) (v06 has no online play and lets the queen go down first)
 - `index.html` - redirects to the game (for GitHub Pages)
 - `sounds/score.mp3` - pocket sound (optional)
 
