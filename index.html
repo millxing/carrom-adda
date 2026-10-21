@@ -8,11 +8,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Carrom Adda</title>
-<meta name="description" content="Play carrom in your browser: against the AI, watch AI vs AI, or challenge a friend online.">
+<title>Carrom Adda – Play Free Online Carrom in Your Browser</title>
+<meta name="description" content="Play carrom online free in your browser: against the AI, watch AI vs AI, or challenge a friend over the internet. No download, no sign-up.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Carrom Adda">
-<meta property="og:title" content="Carrom Adda">
+<meta property="og:title" content="Carrom Adda – Play Free Online Carrom">
 <meta property="og:description" content="Play carrom in your browser: against the AI, watch AI vs AI, or challenge a friend online.">
 <link rel="canonical" href="https://carromadda.org/">
 <meta property="og:url" content="https://carromadda.org/">
@@ -21,9 +21,12 @@
 <meta property="og:image:height" content="675">
 <meta property="og:image:alt" content="Carrom Adda: a crowd watching a carrom match, with the site address carromadda.org">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Carrom Adda">
+<meta name="twitter:title" content="Carrom Adda – Play Free Online Carrom">
 <meta name="twitter:description" content="Play carrom in your browser: against the AI, watch AI vs AI, or challenge a friend online.">
 <meta name="twitter:image" content="https://carromadda.org/social-card.jpg">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Carrom Adda","url":"https://carromadda.org/","description":"Play carrom online free in your browser: against the AI, watch AI vs AI, or challenge a friend over the internet. No download, no sign-up.","image":"https://carromadda.org/social-card.jpg","genre":["Board game","Sports","Strategy"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","playMode":["SinglePlayer","MultiPlayer"],"inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Rob Schoen"}}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -270,9 +273,33 @@
   .pbar select{flex:1}
 
   @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+  .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 </style>
 </head>
 <body>
+<main class="sr-only" id="about">
+  <h2>Play carrom online for free</h2>
+  <p>Carrom Adda is a free carrom game that runs in your web browser. There is nothing to download and no account to create. Play against the computer at three difficulty levels, watch two AI players compete, or challenge a friend online over the internet. The game uses realistic rigid-disc physics with spin, cushion and piece friction, and adjustable table settings.</p>
+  <h2>How to play carrom</h2>
+  <ul>
+    <li>Win the hand-guess toss to break. The breaker plays white; the other player plays black.</li>
+    <li>Aim by clicking the board, slide the striker along your baseline, and set power with the mouse wheel or the power bar. Press Space or Enter to shoot. On a keyboard, the arrow keys aim and set power.</li>
+    <li>Flick the striker to pocket your own colour. Pocket a piece and you shoot again.</li>
+    <li>The queen (the red piece) only counts once you have already pocketed one of your own pieces. You must cover the queen by pocketing one of your own pieces on your next shot.</li>
+    <li>The winner scores one point for each opposing piece left on the board, plus three points if they covered the queen.</li>
+  </ul>
+  <h2>Game modes and features</h2>
+  <ul>
+    <li>Play vs AI: three difficulty levels.</li>
+    <li>Play vs Human: one player hosts and shares an invite link or a 5-character code; connection is peer to peer.</li>
+    <li>AI vs AI: watch two computer players, each with its own level.</li>
+    <li>Watch Replay: every game is recorded and can be replayed at 1x to 8x speed, saved, and loaded again.</li>
+    <li>Tunable physics presets and table settings.</li>
+  </ul>
+  <h2>About carrom</h2>
+  <p>Carrom is a tabletop board game from South Asia, played on a square wooden board with four corner pockets. Players flick a striker to pocket nine white or black pieces and the red queen. It is also called finger billiards, and is popular in India, Pakistan, Sri Lanka and Nepal, where a casual game among friends is often called an adda.</p>
+</main>
+
 <div id="menu">
   <canvas id="menuBg" aria-hidden="true"></canvas>
   <h1>Carrom <span>Adda</span></h1>

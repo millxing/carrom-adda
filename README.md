@@ -30,7 +30,7 @@ Play at https://carromadda.org/ or open `index.html` in any modern browser. No i
 
 - `index.html` - the game (everything is in this one file)
 - `archive/` - previous versions (v05-v07; sounds paths are not fixed) (v06 has no online play and lets the queen go down first)
-- `index.html` - redirects to the game (for GitHub Pages)
+- `robots.txt`, `sitemap.xml` - search engine files
 - `sounds/score.mp3` - pocket sound (optional)
 
 ## License
