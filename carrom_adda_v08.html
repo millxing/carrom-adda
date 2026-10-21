@@ -1156,9 +1156,10 @@ const the = p => isYou(p) ? 'you' : G.mode === 'ai' ? 'the AI' : nm(p);
 
 const DIFF = {
   // pmul: multiples of the estimated "just enough" power for each line (see shotPower)
-  easy:   { lines:6,  pmul:[1.1, 1.8],              err:4, extra:4, pick:3, robust:0, horizon:4 },
-  medium: { lines:12, pmul:[1, 1.4, 2],             err:2, extra:6, pick:2, robust:0, horizon:5 },
-  hard:   { lines:16, pmul:[1, 1.35, 1.8],          err:1, extra:10, pick:1, robust:3, horizon:6 },
+  // blunder: chance of playing a random top-10 shot instead of the pick; bounces: cushion bounces the sweep may bank off
+  easy:   { lines:8,  pmul:[1.1, 1.8],              err:3,   extra:5, pick:2, robust:0, horizon:5, blunder:0.05, bounces:0 },
+  medium: { lines:12, pmul:[1, 1.4, 2],             err:2,   extra:6, pick:2, robust:0, horizon:5, blunder:0.03, bounces:1 },
+  hard:   { lines:14, pmul:[1, 1.35, 1.8],          err:1.4, extra:8, pick:2, robust:2, horizon:6, blunder:0.03, bounces:2 },
 };
 
 // pieces of a colour on the board, counting every layer of every stack
@@ -1795,7 +1796,7 @@ function* aiSearch(d){
     for (let a = -MAX_ANGLE; a <= MAX_ANGLE; a += 2){
       const dir = aimDir(a);
       let px = c[0] + al[0]*s, py = c[1] + al[1]*s, ux = dir[0], uy = dir[1], len = 0;
-      for (let seg = 0; seg < 3; seg++){
+      for (let seg = 0; seg <= d.bounces; seg++){
         const hit = castRay(px, py, ux, uy, Rs);
         if (hit.type === 'piece'){
           const t = hit.p;
@@ -1835,7 +1836,8 @@ function* aiSearch(d){
     r.v = sum/3;
   }
   results.sort((a, b) => b.v - a.v);
-  return results[(Math.random()*Math.min(d.pick, results.length)) | 0].cand;
+  const n = Math.random() < d.blunder ? 10 : d.pick;
+  return results[(Math.random()*Math.min(n, results.length)) | 0].cand;
 }
 
 function aiTick(){
@@ -2263,7 +2265,7 @@ function buildSettings(){
   slider(s, 'Error: power ± (%)', 0, 10, 0.1, () => S.jPow, v => { S.jPow = v; saveS(); });
   slider(s, 'Error grows above (m/s)', 0.5, 3, 0.1, () => S.jThresh, v => { S.jThresh = v; saveS(); });
   slider(s, 'Error at 3 m/s (× normal)', 1, 4, 0.1, () => S.jGain, v => { S.jGain = v; saveS(); });
-  s.appendChild(el('div', { class:'hint', text:'The AI uses the same error, multiplied by its difficulty: Easy ×4, Medium ×2, Hard ×1 (same as you).' }));
+  s.appendChild(el('div', { class:'hint', text:'The AI uses the same error, multiplied by its difficulty: Easy ×3, Medium ×2, Hard ×1.4.' }));
 
   // backup
   s = section(root, 'Share / backup', false);
