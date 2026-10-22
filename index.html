@@ -61,6 +61,7 @@
   #menuBg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}       /* under everything on the menu */
   #menu h1{margin:0;font:400 clamp(44px,8vw,72px)/1 var(--display);letter-spacing:.01em;color:var(--fg);text-align:center}
   #menu h1 span{color:var(--brass2)}
+  #menu .ver{margin-top:-18px;color:var(--mute);font:500 11px/1 var(--mono);letter-spacing:.16em}      /* small print tucked under the title */
   .modes{display:grid;grid-template-columns:repeat(2,minmax(0,220px));gap:14px;width:100%;justify-content:center}
   .modes button{padding:24px 12px;font:700 17px/1.1 var(--body);border-radius:16px;background:linear-gradient(180deg,#2c2019,#211813);border-color:var(--line2)}
   .modes button:hover{background:linear-gradient(180deg,#3a2a20,#2a1f18);border-color:var(--brass)}
@@ -303,6 +304,7 @@
 <div id="menu">
   <canvas id="menuBg" aria-hidden="true"></canvas>
   <h1>Carrom <span>Adda</span></h1>
+  <div class="ver">v<span id="ver"></span></div>
   <div class="modes">
     <button id="mAI">Play vs AI</button>
     <button id="mNet">Play vs Human</button>
@@ -310,7 +312,7 @@
     <button id="mRep">Watch Replay</button>
   </div>
   <img id="menuImg" alt="">
-  <div class="lic">v<span id="ver"></span> · © 2026 <a href="https://entangledparticles.xyz/" target="_blank" rel="noopener">Entangled Particles</a> · free for noncommercial use ·
+  <div class="lic">© 2026 <a href="https://entangledparticles.xyz/" target="_blank" rel="noopener">Entangled Particles</a> · free for noncommercial use ·
     <a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener">PolyForm Noncommercial 1.0.0</a><br>
     Bugs or feedback: <a href="mailto:millxing@gmail.com?subject=Carrom%20Adda">millxing@gmail.com</a></div>
 </div>
