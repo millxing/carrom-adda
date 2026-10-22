@@ -310,7 +310,7 @@
     <button id="mRep">Watch Replay</button>
   </div>
   <img id="menuImg" alt="">
-  <div class="lic">© 2026 <a href="https://entangledparticles.xyz/" target="_blank" rel="noopener">Entangled Particles</a> · free for noncommercial use ·
+  <div class="lic">v<span id="ver"></span> · © 2026 <a href="https://entangledparticles.xyz/" target="_blank" rel="noopener">Entangled Particles</a> · free for noncommercial use ·
     <a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener">PolyForm Noncommercial 1.0.0</a><br>
     Bugs or feedback: <a href="mailto:millxing@gmail.com?subject=Carrom%20Adda">millxing@gmail.com</a></div>
 </div>
@@ -912,6 +912,8 @@ function castRay(px, py, ux, uy, Rs, skipStriker){
 // ====================================================================
 // RENDERING
 // ====================================================================
+const VERSION = '08.1';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
+document.getElementById('ver').textContent = VERSION;
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const FRAME = 0.09, TAU = Math.PI*2;
 let view = { k:1, ox:0, oy:0, flip:false }, bgCache = null, bgKey = '';     // flip: board turned 180° (the online guest plays the top side from the bottom of their screen)
