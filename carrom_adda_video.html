@@ -422,6 +422,7 @@
   </div>
 </div>
 
+<script src="vendor/mp4-muxer.js"></script>
 <script>
 'use strict';
 /* ====================================================================
@@ -670,7 +671,7 @@ const sfx = (() => {
     clang(t0, 0.95, 1); clang(t0 + 0.085, 0.4, 1.07); clang(t0 + 0.15, 0.2, 0.93);
     for (const dt of [0.21, 0.245, 0.275]) tick(t0 + dt, 0.18, 3000 + Math.random()*1500);
   };
-  return { on:true, fileScore:false, audioTrack(){ return init() && recDest ? recDest.stream.getAudioTracks()[0] : null; },        // true: use sounds/score.mp3 when it loads; otherwise (or false) the synthesised clang
+  return { on:true, fileScore:false, audioTrack(){ if (!init() || !recDest) return null; if (ac.state === 'suspended') ac.resume(); return { track:recDest.stream.getAudioTracks()[0], rate:ac.sampleRate }; },        // true: use sounds/score.mp3 when it loads; otherwise (or false) the synthesised clang
     hit(speed){ if (this.on && speed > 0.03) click(0.15 + 0.85*Math.pow(Math.min(1, speed/2.5), 0.7)); },
     drop(){ if (!this.on) return; (this.fileScore && !scoreBad) ? score(0.9, drop) : drop(); },
     clang(){ drop(); } };
@@ -2463,7 +2464,7 @@ if (joinLink){ history.replaceState(null, '', location.pathname + location.searc
 requestAnimationFrame(frame);
 
 // ====================================================================
-// VIDEO RECORDER (this file only): R or the button records the board + a score strip + game sound to MP4 (WebM where MP4 is unsupported)
+// VIDEO RECORDER (this file only): R or the button records the board + a score strip + game sound to an MP4 (WebCodecs H.264 + mp4-muxer)
 // ====================================================================
 (() => {
   const W = 1080, STRIP = 130, H = W + STRIP;
@@ -2471,8 +2472,7 @@ requestAnimationFrame(frame);
   const g = comp.getContext('2d');
   const btn = document.createElement('button'); btn.id = 'recBtn'; btn.textContent = '● Rec'; btn.title = 'Record video (R)';
   document.body.appendChild(btn);
-  let rec = null, chunks = [], raf = 0, t0 = 0, mime = '';
-  const pick = () => ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+  let rec = null, raf = 0, t0 = 0, nFrames = 0;
   const cap = x => x[0].toUpperCase() + x.slice(1);
   function paint(){
     g.fillStyle = '#110c0a'; g.fillRect(0, 0, W, H);
@@ -2500,28 +2500,54 @@ requestAnimationFrame(frame);
     g.fillStyle = '#a8957b'; g.font = '600 20px "Martian Mono", monospace';
     const secs = Math.floor((performance.now() - t0)/1000);
     g.fillText('carromadda.org · ' + Math.floor(secs/60) + ':' + String(secs % 60).padStart(2, '0'), half, 112);
-    if (rec) raf = requestAnimationFrame(paint);
+    if (rec){ feed(); raf = requestAnimationFrame(paint); }
   }
-  function start(){
-    mime = pick(); if (!mime){ toast('This browser cannot record video'); return; }
-    const tracks = [...comp.captureStream(60).getVideoTracks()], a = sfx.audioTrack(); if (a) tracks.push(a);
-    chunks = []; rec = new MediaRecorder(new MediaStream(tracks), { mimeType:mime, videoBitsPerSecond:10e6 });
-    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-    rec.onstop = () => {
-      const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm', d = new Date(), z = n => String(n).padStart(2, '0');
-      const url = URL.createObjectURL(new Blob(chunks, { type:mime.split(';')[0] }));
-      const a = Object.assign(document.createElement('a'), { href:url, download:`carrom_adda_${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.${ext}` });
-      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
-      toast('Saved ' + ext.toUpperCase() + ' video');
-    };
-    t0 = performance.now(); rec.start(1000); paint();
-    btn.textContent = '■ Stop'; btn.classList.add('on');
+  function feed(){
+    if (rec.ve.encodeQueueSize > 12) return;                       // encoder is behind: drop this frame rather than pile up
+    const f = new VideoFrame(comp, { timestamp:Math.round((performance.now() - t0)*1000) });
+    rec.ve.encode(f, { keyFrame: nFrames++ % 120 === 0 }); f.close();
+  }
+  async function start(){
+    if (!window.VideoEncoder || !window.Mp4Muxer){ toast('This browser cannot record MP4'); return; }
+    const vcfg = { codec:'avc1.640033', width:W, height:H, bitrate:10e6, framerate:60 };
+    if (!(await VideoEncoder.isConfigSupported(vcfg)).supported){ toast('H.264 encoding is not available here'); return; }
+    const a = sfx.audioTrack(); let acfg = null, acodec = '';
+    if (a && window.AudioEncoder && window.MediaStreamTrackProcessor){
+      for (const [c, m] of [['mp4a.40.2', 'aac'], ['opus', 'opus']]){
+        const cfg = { codec:c, sampleRate:a.rate, numberOfChannels:2, bitrate:128000 };
+        if ((await AudioEncoder.isConfigSupported(cfg)).supported){ acfg = cfg; acodec = m; break; }
+      }
+    }
+    const muxer = new Mp4Muxer.Muxer({ target:new Mp4Muxer.ArrayBufferTarget(), fastStart:'in-memory', firstTimestampBehavior:'offset',
+      video:{ codec:'avc', width:W, height:H }, ...(acfg ? { audio:{ codec:acodec, numberOfChannels:2, sampleRate:a.rate } } : {}) });
+    const ve = new VideoEncoder({ output:(c, m) => muxer.addVideoChunk(c, m), error:e => console.error('video encoder', e) });
+    ve.configure(vcfg);
+    let ae = null, reader = null;
+    if (acfg){
+      ae = new AudioEncoder({ output:(c, m) => muxer.addAudioChunk(c, m), error:e => console.error('audio encoder', e) });
+      ae.configure(acfg);
+      reader = new MediaStreamTrackProcessor({ track:a.track }).readable.getReader();
+      (async () => { for (;;){ const { value, done } = await reader.read(); if (done) break; if (ae.state === 'configured') ae.encode(value); value.close(); } })().catch(() => {});
+    } else toast('Recording without sound');
+    nFrames = 0; t0 = performance.now(); rec = { ve, ae, reader, muxer };
+    btn.textContent = '■ Stop'; btn.classList.add('on'); paint();
   }
   function stop(){
     if (!rec) return;
-    const r = rec; rec = null; cancelAnimationFrame(raf); paint();
-    setTimeout(() => r.state !== 'inactive' && r.stop(), 400);       // keep the last frame and the tail of the sound
+    const r = rec; cancelAnimationFrame(raf); paint(); rec = null;
     btn.textContent = '● Rec'; btn.classList.remove('on');
+    setTimeout(async () => {                                        // keep the last frame and the tail of the sound
+      try{
+        if (r.reader) await r.reader.cancel();
+        await r.ve.flush(); if (r.ae) await r.ae.flush();
+        r.muxer.finalize();
+        const d = new Date(), z = n => String(n).padStart(2, '0');
+        const url = URL.createObjectURL(new Blob([r.muxer.target.buffer], { type:'video/mp4' }));
+        const l = Object.assign(document.createElement('a'), { href:url, download:`carrom_adda_${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.mp4` });
+        document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+        toast('Saved MP4 video');
+      }catch(e){ console.error(e); toast('Could not save the video'); }
+    }, 400);
   }
   const toggle = () => rec ? stop() : start();
   btn.addEventListener('click', e => { toggle(); btn.blur(); });
