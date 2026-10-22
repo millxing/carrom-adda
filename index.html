@@ -61,6 +61,8 @@
   #menuBg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}       /* under everything on the menu */
   #menu h1{margin:0;font:400 clamp(44px,8vw,72px)/1 var(--display);letter-spacing:.01em;color:var(--fg);text-align:center}
   #menu h1 span{color:var(--brass2)}
+  #menu .what{margin-top:-8px;color:var(--brass);font-size:13px;text-decoration:none;border-bottom:1px solid var(--line2)}
+  #menu .what:hover{color:var(--brass2);border-bottom-color:var(--brass2)}
   #menu .ver{margin-top:-18px;color:var(--mute);font:500 11px/1 var(--mono);letter-spacing:.16em}      /* small print tucked under the title */
   .modes{display:grid;grid-template-columns:repeat(2,minmax(0,220px));gap:14px;width:100%;justify-content:center}
   .modes button{padding:24px 12px;font:700 17px/1.1 var(--body);border-radius:16px;background:linear-gradient(180deg,#2c2019,#211813);border-color:var(--line2)}
@@ -311,6 +313,7 @@
     <button id="mAIAI">AI vs AI</button>
     <button id="mRep">Watch Replay</button>
   </div>
+  <a class="what" href="https://entangledparticles.xyz/pakistani_carrom.html" target="_blank" rel="noopener">What is Pakistani Carrom?</a>
   <img id="menuImg" alt="">
   <div class="lic">© 2026 <a href="https://entangledparticles.xyz/" target="_blank" rel="noopener">Entangled Particles</a> · free for noncommercial use ·
     <a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener">PolyForm Noncommercial 1.0.0</a><br>
