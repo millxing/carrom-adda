@@ -467,7 +467,7 @@ const PARAM_GROUPS = [
     ['pocketD',     'Pocket Ø (m)',               0.02,0.12,0.0005,0.046],
     ['pocketInset', 'Pocket centre inset (m)',    0.0, 0.08,0.0005,0.022],
     ['pocketSpeed', 'Fast pieces skip the hole',  0.0, 1.0, 0.05,  0.7],
-    ['rackRot',     'Break rack rotation (°)',    -90, 90,  1,     45],
+    ['rackRot',     'Break rack rotation (°)',    -90, 90,  1,     90],
   ]],
   ['Table (marble)', [
     ['mu',          'Sliding friction μ',         0.0, 0.05,0.00005,0.0035],
@@ -884,8 +884,8 @@ function rack(breaker = 'human'){     // the rack is turned to face whoever brea
     addPiece(k%2 ? 'black' : 'white', Math.cos(a)*g, Math.sin(a)*g);
   }
   for (let i = 0; i < 12; i++){
-    const a = i*Math.PI/6, rad = i%2 === 0 ? 2*g : Math.sqrt(3)*g;
-    addPiece(i%2 ? 'black' : 'white', Math.cos(a + Math.PI/6 + rot)*rad, Math.sin(a + Math.PI/6 + rot)*rad);
+    const a = i*Math.PI/6 + rot, rad = i%2 === 0 ? 2*g : Math.sqrt(3)*g;     // hex lattice: 2g sits right behind an inner piece, √3g in the gaps
+    addPiece(i%2 ? 'black' : 'white', Math.cos(a)*rad, Math.sin(a)*rad);
   }
   settle();
 }
@@ -1000,7 +1000,7 @@ function buildBG(){
   // D: outermost line, closed rectangle
   g.beginPath(); g.rect(X(-bD), X(-bD), 2*bD*k, 2*bD*k); g.stroke();
   // centre line + single circle hugging the rack
-  L(0, -h, 0, h);
+  L(-h, 0, h, 0);     // runs between the two sides, so it divides the players
   const rackR = 2*(P.pieceD + 0.0008) + P.pieceD/2 + 0.008;
   g.beginPath(); g.arc(X(0), X(0), rackR*k, 0, TAU); g.stroke();
   // four concave arcs between the circle's diagonal points, small inner ring with an X
@@ -1130,7 +1130,10 @@ function draw(){
     const f = falls[i], u = (nowMs - f.t0)/FALL_MS;
     if (u >= 1){ falls.splice(i, 1); continue; }
     const e = Math.min(1, u*1.7), pull = e*e*(3 - 2*e), q = u*u*(3 - 2*u);
-    const x = f.x + (f.pcx - f.x)*pull + f.vx*0.06*Math.sin(Math.PI*Math.min(1, u*1.5)), y = f.y + (f.pcy - f.y)*pull + f.vy*0.06*Math.sin(Math.PI*Math.min(1, u*1.5));
+    // carry-on drift along the entry velocity, capped so a fast piece can't overshoot through the cushion
+    const fv = Math.hypot(f.vx, f.vy), dr = fv > 0 ? Math.min(0.06*fv, 0.008)/fv : 0, hh = H() - f.b.r*0.5;
+    const sw = Math.sin(Math.PI*Math.min(1, u*1.5));
+    const x = Math.max(-hh, Math.min(hh, f.x + (f.pcx - f.x)*pull + f.vx*dr*sw)), y = Math.max(-hh, Math.min(hh, f.y + (f.pcy - f.y)*pull + f.vy*dr*sw));
     const [sx, sy] = toS(x, y);
     const sc = 1 - 0.6*q;
     ctx.save();
