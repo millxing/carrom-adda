@@ -702,7 +702,9 @@ const sfx = (() => {
 // ---------- contact solver ----------
 // A may be null (static wall). n points A→B (B approaches when relative normal speed < 0).
 // ra, rb: lever arms from body centres to contact point.
+let nSolve = 0;        // contacts handled so far: step() stops its passes once one finds none
 function solve(A, B, nx, ny, rax, ray, rbx, rby, depth, eBase, mu, hard){
+  nSolve++;
   const iA = A ? A.invM : 0, iIA = A ? A.invI : 0;
   let vax = 0, vay = 0;
   if (A){ vax = A.vx - A.w*ray; vay = A.vy + A.w*rax; }
@@ -752,6 +754,7 @@ function contactsPass(act){
       let a = act[i], b = act[j];
       if (a.kind === 'piece' && b.kind === 'striker'){ const t = a; a = b; b = t; }
       const dx = b.x - a.x, dy = b.y - a.y;
+      if (!(a.kind === 'striker' && b.inside) && (dx >= a.r + b.r || dx <= -(a.r + b.r) || dy >= a.r + b.r || dy <= -(a.r + b.r))) continue;     // far apart: skip the hypot
       if (a.kind === 'striker'){            // a = ring, b = piece
         const d = Math.hypot(dx, dy);
         if (d < 1e-9) continue;
@@ -806,14 +809,17 @@ function step(dt, list = bodies, log = pocketLog){
     if (sp > 0) b.moved = true;
     b.x += b.vx*dt; b.y += b.vy*dt; b.ang += b.w*dt;
   }
-  for (let it = 0; it < P.iters; it++) contactsPass(act);
+  for (let it = 0; it < P.iters; it++){ const n0 = nSolve; contactsPass(act); if (nSolve === n0) break; }     // a pass that touches nothing changes nothing, so neither would the next
   if (pendingTopple.length) processTopples(list, real);
   // pockets
   const pr = P.pocketD/2, pcs = pocketCentres();
   for (const b of act){
+    let capR = -1;
     for (const pc of pcs){
-      const capR = pr*(1 - P.pocketSpeed*Math.min(1, Math.hypot(b.vx, b.vy)/4));
-      if (Math.hypot(b.x - pc[0], b.y - pc[1]) < capR){
+      const px = b.x - pc[0], py = b.y - pc[1];
+      if (px >= pr || px <= -pr || py >= pr || py <= -pr) continue;       // outside the pocket's bounding box: cannot be captured
+      if (capR < 0) capR = pr*(1 - P.pocketSpeed*Math.min(1, Math.hypot(b.vx, b.vy)/4));
+      if (Math.hypot(px, py) < capR){
         const fvx = b.vx, fvy = b.vy;
         b.alive = false; b.vx = b.vy = b.w = 0;
         for (const c of (b.layers || [b.color])) log.push({ kind:b.kind, color:c });
@@ -912,7 +918,7 @@ function castRay(px, py, ux, uy, Rs, skipStriker){
 // ====================================================================
 // RENDERING
 // ====================================================================
-const VERSION = '08.2';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
+const VERSION = '08.3';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
 document.getElementById('ver').textContent = VERSION;
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const FRAME = 0.09, TAU = Math.PI*2;

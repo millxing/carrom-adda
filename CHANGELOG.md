@@ -1,5 +1,8 @@
 # Changelog
 
+## 08.3
+- AI thinks 6-7x faster (Expert ~2 s on the opening board, was ~14 s). Physics results are unchanged, so old recordings replay the same.
+
 ## 08.2
 - New Expert AI difficulty.
 - AI rebalance: stronger Easy, weaker Hard; occasional blunders; bank shots limited by level (none on Easy, one bounce on Medium, two on Hard and Expert).
