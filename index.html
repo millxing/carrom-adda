@@ -279,7 +279,7 @@
 <body>
 <main class="sr-only" id="about">
   <h2>Play carrom online for free</h2>
-  <p>Carrom Adda is a free carrom game that runs in your web browser. There is nothing to download and no account to create. Play against the computer at three difficulty levels, watch two AI players compete, or challenge a friend online over the internet. The game uses realistic rigid-disc physics with spin, cushion and piece friction, and adjustable table settings.</p>
+  <p>Carrom Adda is a free carrom game that runs in your web browser. There is nothing to download and no account to create. Play against the computer at four difficulty levels, watch two AI players compete, or challenge a friend online over the internet. The game uses realistic rigid-disc physics with spin, cushion and piece friction, and adjustable table settings.</p>
   <h2>How to play carrom</h2>
   <ul>
     <li>Win the hand-guess toss to break. The breaker plays white; the other player plays black.</li>
@@ -290,7 +290,7 @@
   </ul>
   <h2>Game modes and features</h2>
   <ul>
-    <li>Play vs AI: three difficulty levels.</li>
+    <li>Play vs AI: four difficulty levels.</li>
     <li>Play vs Human: one player hosts and shares an invite link or a 5-character code; connection is peer to peer.</li>
     <li>AI vs AI: watch two computer players, each with its own level.</li>
     <li>Watch Replay: every game is recorded and can be replayed at 1x to 8x speed, saved, and loaded again.</li>
@@ -912,7 +912,7 @@ function castRay(px, py, ux, uy, Rs, skipStriker){
 // ====================================================================
 // RENDERING
 // ====================================================================
-const VERSION = '08.1';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
+const VERSION = '08.2';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
 document.getElementById('ver').textContent = VERSION;
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const FRAME = 0.09, TAU = Math.PI*2;
@@ -1193,6 +1193,7 @@ const DIFF = {
   easy:   { lines:8,  pmul:[1.1, 1.8],              err:3,   extra:5, pick:2, robust:0, horizon:5, blunder:0.05, bounces:0 },
   medium: { lines:12, pmul:[1, 1.4, 2],             err:2,   extra:6, pick:2, robust:0, horizon:5, blunder:0.03, bounces:1 },
   hard:   { lines:14, pmul:[1, 1.35, 1.8],          err:1.4, extra:8, pick:2, robust:2, horizon:6, blunder:0.03, bounces:2 },
+  expert: { lines:20, pmul:[0.9, 1, 1.2, 1.5, 1.9], err:0.7, extra:12, pick:1, robust:4, horizon:7, blunder:0,    bounces:2 },
 };
 
 // pieces of a colour on the board, counting every layer of every stack
@@ -2298,7 +2299,7 @@ function buildSettings(){
   slider(s, 'Error: power ± (%)', 0, 10, 0.1, () => S.jPow, v => { S.jPow = v; saveS(); });
   slider(s, 'Error grows above (m/s)', 0.5, 3, 0.1, () => S.jThresh, v => { S.jThresh = v; saveS(); });
   slider(s, 'Error at 3 m/s (× normal)', 1, 4, 0.1, () => S.jGain, v => { S.jGain = v; saveS(); });
-  s.appendChild(el('div', { class:'hint', text:'The AI uses the same error, multiplied by its difficulty: Easy ×3, Medium ×2, Hard ×1.4.' }));
+  s.appendChild(el('div', { class:'hint', text:'The AI uses the same error, multiplied by its difficulty: Easy ×3, Medium ×2, Hard ×1.4, Expert ×0.7.' }));
 
   // backup
   s = section(root, 'Share / backup', false);
@@ -2316,7 +2317,7 @@ function buildSettings(){
 
 function buildChrome(){
   const show = id => $(id).classList.remove('hidden'), hide = id => $(id).classList.add('hidden');
-  const DIFFS = [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']];
+  const DIFFS = [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard'], ['expert', 'Expert']];
   for (const id of ['aiDiff', 'aiaiB', 'aiaiA']) DIFFS.forEach(([v, t]) => $(id).appendChild(el('option', { value:v, text:t })));
 
   // game selection
