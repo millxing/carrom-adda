@@ -1,5 +1,9 @@
 # Changelog
 
+## 08.4
+- AI breaks hard again: dedicated opening-break shots, with power set by difficulty (Easy ~2, Expert ~3).
+- Menu: version number under the title, and a "What is Pakistani Carrom?" link.
+
 ## 08.3
 - AI thinks 6-7x faster (Expert ~2 s on the opening board, was ~14 s). Physics results are unchanged, so old recordings replay the same.
 
