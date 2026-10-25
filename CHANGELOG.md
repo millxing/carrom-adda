@@ -1,5 +1,8 @@
 # Changelog
 
+## 08.5
+- AI goes for the queen earlier: when it can pocket her and has an easy cover shot lined up, it takes her instead of waiting until its last piece.
+
 ## 08.4
 - AI breaks hard again: dedicated opening-break shots, with power set by difficulty (Easy ~2, Expert ~3).
 - Menu: version number under the title, and a "What is Pakistani Carrom?" link.
