@@ -1742,7 +1742,9 @@ function evalOutcome(list, log, power = 0){
   if (foul) v -= 30;
   else {
     if (G.queen === 'pending') v += own > 0 ? 10 : -9;
-    else if (q && 9 - aiLeft - own > 0) v += 6 + (aiLeft <= 1 ? 25 : 0);   // queen down but not yet covered; with one piece left she is the only useful pot
+    // queen down but not yet covered: she keeps the turn, and is worth more than a piece when a cover shot is lined up
+    // (waiting lets the opponent take her). With one piece left she is the only useful pot.
+    else if (q && 9 - aiLeft - own > 0) v += 10 + 10*coverChance(list) + (aiLeft <= 1 ? 25 : 0);
     if (own > 0) v += 4;                           // keeps the turn
     // clearing the last piece only wins once the queen is covered; otherwise the piece just comes back
     const covered = G.queen === 'ai' || G.queen === 'human' || (G.queen === 'pending' && own > 0);
@@ -1761,6 +1763,39 @@ function evalOutcome(list, log, power = 0){
     if (b.color === PLAYERS[aiWho].color && H() - Math.max(Math.abs(b.x), Math.abs(b.y)) - b.r < 0.01) v -= 1.5;   // glued to a cushion: hard to play later
   }
   return v;
+}
+
+// How makeable the easiest cover shot would be on this board, 0..1: a straight-ish ghost-ball pot of one of our pieces
+// from our baseline, with the striker's path and the piece's path to the pocket both clear. Geometry only, no physics.
+function coverChance(list){
+  const side = PLAYERS[aiWho].side, c = baseCentre(side), al = SIDES[side].along, inw = SIDES[side].inward;
+  const R = sRange(), h = H(), pcs = pocketCentres(), col = PLAYERS[aiWho].color;
+  const pcsOn = list.filter(b => b.kind === 'piece' && b.alive), st = list.find(b => b.kind === 'striker'), Rs = st ? st.r : 0.02;
+  const clear = (ax, ay, bx, by, rad, skip) => pcsOn.every(p => {
+    if (p === skip) return true;
+    const dx = bx - ax, dy = by - ay, L = dx*dx + dy*dy || 1e-9, u = Math.max(0, Math.min(1, ((p.x - ax)*dx + (p.y - ay)*dy)/L));
+    return Math.hypot(ax + dx*u - p.x, ay + dy*u - p.y) >= rad + p.r;
+  });
+  let best = 0;
+  for (const t of pcsOn){
+    if (t.color !== col) continue;
+    for (const pk of pcs){
+      const dx = pk[0] - t.x, dy = pk[1] - t.y, dl = Math.hypot(dx, dy);
+      if (dl < 1e-6 || !clear(t.x, t.y, pk[0], pk[1], t.r*0.9, t)) continue;
+      const ux = dx/dl, uy = dy/dl, gx = t.x - ux*(Rs + t.r), gy = t.y - uy*(Rs + t.r);
+      for (let k = -4; k <= 4; k++){
+        const s = k/4*R*0.85, sx = c[0] + al[0]*s, sy = c[1] + al[1]*s;
+        if (pcsOn.some(p => Math.hypot(p.x - sx, p.y - sy) < Rs + p.r)) continue;
+        const vx = gx - sx, vy = gy - sy, vl = Math.hypot(vx, vy);
+        if (vl < 1e-6) continue;
+        const cut = (vx*ux + vy*uy)/vl;
+        if (cut < 0.6 || Math.abs(Math.atan2(inw[0]*vy - inw[1]*vx, inw[0]*vx + inw[1]*vy)*180/Math.PI) > MAX_ANGLE) continue;
+        if (!clear(sx, sy, gx, gy, Rs*0.9, t)) continue;
+        best = Math.max(best, Math.min(1, (cut - 0.6)/0.3)*Math.max(0, 1 - (vl + dl)/(4*h)));
+      }
+    }
+  }
+  return best;
 }
 
 function* simulate(base, cand, d){
