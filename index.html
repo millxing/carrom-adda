@@ -2425,7 +2425,7 @@ function buildChrome(){
   const tabs = [...$('tabs').children], panes = [...$('tabbody').children];
   const pickTab = t => { tabs.forEach(b => b.classList.toggle('on', b.dataset.tab === t)); panes.forEach(p => p.classList.toggle('hidden', p.dataset.panel !== t)); };
   tabs.forEach(b => b.onclick = () => { pickTab(b.dataset.tab); b.blur(); });
-  pickTab('controls');
+  pickTab('log');
 
   // side panel: the bottom row
   $('newBtn').onclick = () => {
