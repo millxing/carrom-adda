@@ -286,9 +286,9 @@
   <h2>How to play carrom</h2>
   <ul>
     <li>Win the hand-guess toss to break. The breaker plays white; the other player plays black.</li>
-    <li>Aim by clicking the board, slide the striker along your baseline, and set power with the mouse wheel or the power bar. Press Space or Enter to shoot. On a keyboard, the arrow keys aim and set power.</li>
+    <li>Aim by clicking the board, slide the striker along your baseline (or move it forward, up to the inner square), and set power with the mouse wheel or the power bar. Press Space or Enter to shoot. On a keyboard, the arrow keys aim and set power.</li>
     <li>Flick the striker to pocket your own colour. Pocket a piece and you shoot again.</li>
-    <li>The queen (the red piece) only counts once you have already pocketed one of your own pieces. You must cover the queen by pocketing one of your own pieces on your next shot.</li>
+    <li>The queen (the red piece) only counts once you have already pocketed one of your own pieces. You must cover the queen by pocketing one of your own pieces on your next shot. If the queen goes in on the break along with a white piece, she stays off the table until the breaker's turn ends and then goes back to the centre.</li>
     <li>The winner scores one point for each opposing piece left on the board, plus three points if they covered the queen.</li>
   </ul>
   <h2>Game modes and features</h2>
@@ -353,6 +353,8 @@
         <ul>
           <li>Pocket one of your pieces and you shoot again.</li>
           <li class="q">Pocket the red queen (only after one of your own pieces is down, or she goes back to the centre), then cover her with one of your own pieces on a <i>later</i> shot (both on the same shot doesn’t count), or she goes back to the centre.</li>
+          <li class="q">Queen and a white in on the break: she stays off the table (no cover possible) until the breaker’s turn ends, then goes back to the centre.</li>
+          <li>The striker may sit anywhere on your baseline, or forward of it up to (not over) the inner square.</li>
           <li>If your shot leaves the queen or an opponent’s piece touching or behind their baseline, it goes back to the centre, stacked on whatever is there.</li>
           <li>A stack rides along on a very soft hit, but topples when hit harder.</li>
           <li>Winner scores one point per opponent piece left on the board, plus 3 for a covered queen.</li>
@@ -591,6 +593,8 @@ function baseCentre(side){
   return [-i[0]*d, -i[1]*d];
 }
 const sRange = () => Math.max(0, H() - P.baseMargin);
+// how far the striker may come forward off the baseline: up to the inner square, its edge touching but not over the line
+const fRange = () => Math.max(0, P.innerOff - P.baseOff - P.ringOD/2);
 function aimDir(deg){
   const a = deg*Math.PI/180, c = Math.cos(a), s = Math.sin(a), i = SIDES[S.side].inward;
   return [i[0]*c - i[1]*s, i[0]*s + i[1]*c];
@@ -924,7 +928,7 @@ function castRay(px, py, ux, uy, Rs, skipStriker){
 // ====================================================================
 // RENDERING
 // ====================================================================
-const VERSION = '08.5';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
+const VERSION = '08.6';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
 document.getElementById('ver').textContent = VERSION;
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const FRAME = 0.09, TAU = Math.PI*2;
@@ -1215,10 +1219,10 @@ const ownLeft = p => onBoard(PLAYERS[p].color);
 
 function setPhase(ph){ G.phase = ph; updateUI(); }
 
-function putStriker(s){
-  const c = baseCentre(S.side), a = SIDES[S.side].along, R = sRange();
-  S.s = Math.max(-R, Math.min(R, s));
-  striker.x = c[0] + a[0]*S.s; striker.y = c[1] + a[1]*S.s;
+function putStriker(s, f = S.f){
+  const c = baseCentre(S.side), a = SIDES[S.side].along, i = SIDES[S.side].inward, R = sRange();
+  S.s = Math.max(-R, Math.min(R, s)); S.f = Math.max(0, Math.min(fRange(), f || 0));
+  striker.x = c[0] + a[0]*S.s + i[0]*S.f; striker.y = c[1] + a[1]*S.s + i[1]*S.f;
 }
 const strikerBlocked = () => pieces().some(p => p.alive && Math.hypot(p.x - striker.x, p.y - striker.y) < striker.r + p.r - 1e-4);
 function autoPlace(){
@@ -1285,13 +1289,13 @@ function startGame(first = 'human', rec = null, net = null){
   else if (net){
     exitReplay(); netTable(net);
     setMode('net'); G.me = NET.role === 'host' ? 'human' : 'ai'; G.diff = { human:'medium', ai:'medium' };
-    REC = { v:1, id:Date.now(), date:new Date().toISOString(), seed:net.seed, params:Object.assign({}, P),
+    REC = { v:1, rules:2, id:Date.now(), date:new Date().toISOString(), seed:net.seed, params:Object.assign({}, P),
             first, vs:'net', diff:Object.assign({}, G.diff), shots:[], winner:null, pts:0 };
     NET.inbox.length = 0; NET.snaps = {}; NET.waiting = null; NET.live = true;
   } else {
     exitReplay();
     setMode(S.vs); G.diff = { human:S.diffB, ai:S.diff };
-    REC = { v:1, id:Date.now(), date:new Date().toISOString(), seed:(Math.random()*4294967296) >>> 0, params:Object.assign({}, P),
+    REC = { v:1, rules:2, id:Date.now(), date:new Date().toISOString(), seed:(Math.random()*4294967296) >>> 0, params:Object.assign({}, P),
             first, vs:S.vs, diff:Object.assign({}, G.diff), shots:[], winner:null, pts:0 };
   }
   view.flip = G.mode === 'net' && !G.replay && G.me === 'ai'; $('app').classList.toggle('guest', view.flip);
@@ -1299,7 +1303,8 @@ function startGame(first = 'human', rec = null, net = null){
   falls.length = 0; pocketLog.length = 0; running = false;
   striker.alive = false;
   rack(first);
-  G.queen = 'board'; G.turn = first;
+  G.queen = 'board'; G.turn = first; G.nShot = 0;
+  G.rules = (rec || REC).rules || 1;               // replays recorded before 08.6 keep the old rules
   PLAYERS[first].color = 'white'; PLAYERS[opponent(first)].color = 'black';      // the breaker plays white
   $('log').textContent = '';                       // each game (or replay) starts a fresh log
   toast(isYou(first) ? 'Your break: you play white' : G.mode === 'ai' || (G.mode === 'net' && !G.replay) ? `${nm(first)} breaks: you play black` : `${nm(first)} breaks and plays white`);
@@ -1310,7 +1315,7 @@ const setMode = m => { G.mode = m === 'aiai' || m === 'net' ? m : 'ai'; G.aiAI =
 
 function beginTurn(){
   const who = G.turn;
-  S.side = PLAYERS[who].side; S.mode = 'legal'; S.angle = 0; S.s = 0; S.power = 1;
+  S.side = PLAYERS[who].side; S.mode = 'legal'; S.angle = 0; S.s = 0; S.f = 0; S.power = 1;
   Object.assign(striker, { alive:true, vx:0, vy:0, w:0, inside:false });
   for (const p of pieces()) p.inside = false;
   autoPlace(); syncUI();
@@ -1334,7 +1339,7 @@ function fire(sigA, sigP){
   const em = errMult(S.power);
   const dA = gauss()*sigA*em, pw = Math.max(0.05, S.power*(1 + gauss()*sigP*em/100));
   if (REC){
-    const sh = { who:G.turn, s:S.s, angle:S.angle, power:S.power, spin:S.spin, dA, pw };
+    const sh = { who:G.turn, s:S.s, f:S.f, angle:S.angle, power:S.power, spin:S.spin, dA, pw };
     if (!sameParams(P, recP)){ sh.P = Object.assign({}, P); recP = sh.P; }      // physics tweaked mid-game: the replay needs it
     REC.shots.push(sh);
     if (G.mode === 'net') netSend({ t:'shot', n:REC.shots.length - 1, sh });
@@ -1343,7 +1348,7 @@ function fire(sigA, sigP){
 }
 function shootHuman(){
   if (G.phase !== 'aim' || paused) return;
-  if (strikerBlocked()){ toast('Striker overlaps a piece — slide it along the baseline'); return; }
+  if (strikerBlocked()){ toast('Striker overlaps a piece — move it'); return; }
   fire(S.jitter ? S.jAng : 0, S.jitter ? S.jPow : 0);
 }
 
@@ -1375,6 +1380,7 @@ function resolveShot(log){
   // queue a pocketed piece for return to the centre (only if one of that colour is actually in a pocket)
   const ret = c => { if (TOTAL[c] - onBoard(c) - toCentre.filter(x => x === c).length > 0){ toCentre.push(c); return true; } return false; };
   let keep = false, winner = null;
+  const brk = !G.nShot++ && G.rules >= 2;
 
   // the queen, or the opponent's pieces, that this shot left on or behind the opponent's baseline go back to the centre
   const stranded = baselineStranded(me);
@@ -1390,7 +1396,10 @@ function resolveShot(log){
     if (G.queen === 'pending' || q){ ret('red'); G.queen = 'board'; msgs.push('Queen back to the centre'); }
     if (ret(myC)) msgs.push(`One of ${poss(me)} pieces returns`);
   } else {
-    if (G.queen === 'pending'){
+    if (brk && q && own > 0){                       // queen and a white on the break: she sits out the rest of this turn
+      G.queen = 'out'; keep = true;
+      msgs.push(`Queen off the table until ${poss(opp)} turn`);
+    } else if (G.queen === 'pending'){
       if (own > 0){ G.queen = me; msgs.push(you ? 'Queen covered!' : `${nm(me)} covered the queen`); keep = true; }
       else { ret('red'); G.queen = 'board'; msgs.push('Queen not covered: back to the centre'); }
     } else if (q && 9 - ownLeft(me) - own === 0){     // the queen may only go down once you have pocketed a piece of your own (an earlier shot)
@@ -1415,6 +1424,7 @@ function resolveShot(log){
     for (let i = msgs.length - 1; i >= 0; i--) if (/shoot/i.test(msgs[i])) msgs.splice(i, 1);
     msgs.push(isYou(winner) ? 'You cleared your last piece!' : `${nm(winner)} cleared ${G.mode === 'net' ? 'their' : 'its'} last piece!`);
   }
+  if (G.queen === 'out' && !keep && !winner){ ret('red'); G.queen = 'board'; msgs.push('Queen back to the centre'); }
   placeCentre(toCentre);
   return { keep, msgs, winner };
 }
@@ -1489,8 +1499,8 @@ function replayTurn(who){
 }
 // slide and aim like a person would, then launch with the recorded numbers (replays and the online opponent's shots)
 function animateShot(sh, sp){
-  G.anim = { t0:performance.now(), d1:Math.max(350, Math.abs(sh.s - S.s)/0.3*1000)/sp, d2:Math.max(350, Math.abs(sh.angle - S.angle)/45*1000)/sp, hold:350/sp,
-             s0:S.s, a0:S.angle, s1:sh.s, a1:sh.angle, rec:sh };
+  G.anim = { t0:performance.now(), d1:Math.max(350, Math.hypot(sh.s - S.s, (sh.f || 0) - S.f)/0.3*1000)/sp, d2:Math.max(350, Math.abs(sh.angle - S.angle)/45*1000)/sp, hold:350/sp,
+             s0:S.s, f0:S.f, a0:S.angle, s1:sh.s, f1:sh.f || 0, a1:sh.angle, rec:sh };
   S.power = sh.power; S.spin = sh.spin || 0;
   setPhase('aiAnim');
 }
@@ -1662,8 +1672,8 @@ function validHello(m){
 function cleanShot(sh){
   const num = Number.isFinite;
   if (!sh || !['s', 'angle', 'power', 'dA', 'pw'].every(k => num(sh[k])) || (sh.spin !== undefined && !num(sh.spin))) return null;
-  if (Math.abs(sh.s) > sRange() + 1e-6 || Math.abs(sh.angle) > MAX_ANGLE + 1e-6 || sh.power < 0 || sh.power > PW_MAX + 1e-6 || sh.pw <= 0 || sh.pw > 20 || Math.abs(sh.dA) > 45) return null;
-  return { who:sh.who, s:sh.s, angle:sh.angle, power:sh.power, spin:sh.spin || 0, dA:sh.dA, pw:sh.pw };
+  if ((sh.f !== undefined && !(num(sh.f) && sh.f >= 0 && sh.f <= fRange() + 1e-6)) || Math.abs(sh.s) > sRange() + 1e-6 || Math.abs(sh.angle) > MAX_ANGLE + 1e-6 || sh.power < 0 || sh.power > PW_MAX + 1e-6 || sh.pw <= 0 || sh.pw > 20 || Math.abs(sh.dA) > 45) return null;
+  return { who:sh.who, s:sh.s, f:sh.f || 0, angle:sh.angle, power:sh.power, spin:sh.spin || 0, dA:sh.dA, pw:sh.pw };
 }
 function onNetData(m){
   if (!m || typeof m !== 'object') return;
@@ -1784,8 +1794,8 @@ function coverChance(list){
       const dx = pk[0] - t.x, dy = pk[1] - t.y, dl = Math.hypot(dx, dy);
       if (dl < 1e-6 || !clear(t.x, t.y, pk[0], pk[1], t.r*0.9, t)) continue;
       const ux = dx/dl, uy = dy/dl, gx = t.x - ux*(Rs + t.r), gy = t.y - uy*(Rs + t.r);
-      for (let k = -4; k <= 4; k++){
-        const s = k/4*R*0.85, sx = c[0] + al[0]*s, sy = c[1] + al[1]*s;
+      for (const f of [0, fRange()]) for (let k = -4; k <= 4; k++){
+        const s = k/4*R*0.85, sx = c[0] + al[0]*s + inw[0]*f, sy = c[1] + al[1]*s + inw[1]*f;
         if (pcsOn.some(p => Math.hypot(p.x - sx, p.y - sy) < Rs + p.r)) continue;
         const vx = gx - sx, vy = gy - sy, vl = Math.hypot(vx, vy);
         if (vl < 1e-6) continue;
@@ -1803,7 +1813,8 @@ function* simulate(base, cand, d){
   const list = base.map(cloneBody), log = [];
   const st = list.find(b => b.kind === 'striker');
   const side = PLAYERS[aiWho].side, c = baseCentre(side), al = SIDES[side].along, dir = aimDir(cand.ang);
-  st.x = c[0] + al[0]*cand.s; st.y = c[1] + al[1]*cand.s;
+  const inw = SIDES[side].inward, f = cand.f || 0;
+  st.x = c[0] + al[0]*cand.s + inw[0]*f; st.y = c[1] + al[1]*cand.s + inw[1]*f;
   st.vx = dir[0]*cand.power; st.vy = dir[1]*cand.power; st.w = 0; st.alive = true;
   const dt = 0.001;
   let t = 0, mv = true;
@@ -1823,12 +1834,12 @@ function* aiSearch(d){
   const R = sRange(), Rs = st0.r, h = H(), pcs = pocketCentres();
 
   // legal striker positions (not overlapping any piece)
-  const slots = [];
-  for (let k = -4; k <= 4; k++){
-    const s = k/4*R*0.85, x = c[0] + al[0]*s, y = c[1] + al[1]*s;
-    if (!base.some(p => p.kind === 'piece' && p.alive && Math.hypot(p.x - x, p.y - y) < Rs + p.r + 0.002)) slots.push(s);
+  const slots = [], F = fRange();
+  for (const f of F > 0.01 ? [0, F] : [0]) for (let k = -4; k <= 4; k++){      // on the baseline, and as far forward as allowed
+    const s = k/4*R*0.85, x = c[0] + al[0]*s + inw[0]*f, y = c[1] + al[1]*s + inw[1]*f;
+    if (!base.some(p => p.kind === 'piece' && p.alive && Math.hypot(p.x - x, p.y - y) < Rs + p.r + 0.002)) slots.push({ s, f });
   }
-  if (!slots.length) slots.push(S.s);
+  if (!slots.length) slots.push({ s:S.s, f:S.f });
 
   // with one piece left and the queen still out, the queen has to go first: try her shots before any others
   const myLeft = base.reduce((n, b) => n + (b.kind === 'piece' && b.alive ? b.layers.filter(c => c === PLAYERS[aiWho].color).length : 0), 0);
@@ -1837,8 +1848,8 @@ function* aiSearch(d){
   // geometric candidates: hit a target so it heads for a pocket
   const targets = base.filter(b => b.kind === 'piece' && b.alive && (b.color === PLAYERS[aiWho].color || b.color === 'red'));
   const lines = [];
-  for (const s of slots){
-    const sx = c[0] + al[0]*s, sy = c[1] + al[1]*s;
+  for (const { s, f } of slots){
+    const sx = c[0] + al[0]*s + inw[0]*f, sy = c[1] + al[1]*s + inw[1]*f;
     for (const t of targets) for (const pk of pcs){
       const dx = pk[0] - t.x, dy = pk[1] - t.y, dl = Math.hypot(dx, dy);
       if (dl < 1e-6) continue;
@@ -1850,7 +1861,7 @@ function* aiSearch(d){
       if (cut < 0.35) continue;
       const ang = Math.atan2(inw[0]*vy - inw[1]*vx, inw[0]*vx + inw[1]*vy)*180/Math.PI;
       if (Math.abs(ang) > MAX_ANGLE) continue;
-      lines.push({ s, ang, pw:shotPower(vl, dl, cut), prio: vl + dl*0.8 + (1 - cut)*0.6 + (t.color === 'red' ? (needQ ? -50 : 0.1) : 0) });
+      lines.push({ s, f, ang, pw:shotPower(vl, dl, cut), prio: vl + dl*0.8 + (1 - cut)*0.6 + (t.color === 'red' ? (needQ ? -50 : 0.1) : 0) });
     }
   }
   lines.sort((a, b) => a.prio - b.prio);
@@ -1874,10 +1885,10 @@ function* aiSearch(d){
     return best;
   };
   const extra = [], nExtra = lines.length >= 3 ? d.extra : Math.max(d.extra, 10), reach = lines.length >= d.lines ? 0.1 : 0.6;
-  for (const s of slots){
+  for (const { s, f } of slots){
     for (let a = -MAX_ANGLE; a <= MAX_ANGLE; a += 2){
       const dir = aimDir(a);
-      let px = c[0] + al[0]*s, py = c[1] + al[1]*s, ux = dir[0], uy = dir[1], len = 0;
+      let px = c[0] + al[0]*s + inw[0]*f, py = c[1] + al[1]*s + inw[1]*f, ux = dir[0], uy = dir[1], len = 0;
       for (let seg = 0; seg <= d.bounces; seg++){
         const hit = castRay(px, py, ux, uy, Rs);
         if (hit.type === 'piece'){
@@ -1887,7 +1898,7 @@ function* aiSearch(d){
             const miss = pieceMiss(t, (t.x - ex)/(Rs + t.r), (t.y - ey)/(Rs + t.r));
             const nx = (t.x - ex)/(Rs + t.r), ny = (t.y - ey)/(Rs + t.r);
             let dl = 9; for (const pk of pcs) dl = Math.min(dl, Math.hypot(pk[0] - t.x, pk[1] - t.y));
-            if (miss <= reach) extra.push({ s, ang:a, pw:shotPower(len + hit.t, dl, nx*ux + ny*uy, seg), prio: miss*3 + (len + hit.t)*0.3 + seg*0.2 - (needQ && t.color === 'red' ? 50 : 0) });
+            if (miss <= reach) extra.push({ s, f, ang:a, pw:shotPower(len + hit.t, dl, nx*ux + ny*uy, seg), prio: miss*3 + (len + hit.t)*0.3 + seg*0.2 - (needQ && t.color === 'red' ? 50 : 0) });
           }
           break;
         }
@@ -1899,12 +1910,12 @@ function* aiSearch(d){
   extra.sort((a, b) => a.prio - b.prio);
   const cands = [];
   const pows = l => d.pmul.map(m => Math.min(3, +(l.pw*m).toFixed(2)));
-  for (const l of extra.slice(0, nExtra)) for (const power of pows(l)) cands.push({ s:l.s, ang:l.ang, power });
-  for (const l of lines.slice(0, d.lines)) for (const power of pows(l)) cands.push({ s:l.s, ang:l.ang, power });
-  for (let i = 0; i < 3; i++) cands.push({ s:slots[(Math.random()*slots.length) | 0], ang:(Math.random() - .5)*70, power:1.0 });   // safety / exploration
+  for (const l of extra.slice(0, nExtra)) for (const power of pows(l)) cands.push({ s:l.s, f:l.f, ang:l.ang, power });
+  for (const l of lines.slice(0, d.lines)) for (const power of pows(l)) cands.push({ s:l.s, f:l.f, ang:l.ang, power });
+  for (let i = 0; i < 3; i++) cands.push({ ...slots[(Math.random()*slots.length) | 0], ang:(Math.random() - .5)*70, power:1.0 });   // safety / exploration
 
   if (REC && !REC.shots.length){          // the opening break: a hard shot at the middle of the rack, near-centre slot, safest one that doesn't foul
-    const s0 = slots.reduce((m, s) => Math.abs(s) < Math.abs(m) ? s : m, slots[0]);
+    const back = slots.filter(x => !x.f), s0 = (back.length ? back : slots).reduce((m, x) => Math.abs(x.s) < Math.abs(m.s) ? x : m).s;
     cands.length = 0;
     for (const a of [-3, -1.5, 0, 1.5, 3]) for (const power of d.brk) cands.push({ s:s0, ang:a, power, brk:true });
   }
@@ -1935,8 +1946,8 @@ function aiTick(){
       const cand = r.value;
       G.think = null;
       // human pace: slide along the baseline (~0.3 m/s), then swing the aim (~45°/s), then a beat before the flick
-      const d1 = Math.max(350, Math.abs(cand.s - S.s)/0.3*1000), d2 = Math.max(350, Math.abs(cand.ang - S.angle)/45*1000);
-      G.anim = { t0:performance.now(), d1, d2, hold:350, s0:S.s, a0:S.angle, s1:cand.s, a1:cand.ang };
+      const d1 = Math.max(350, Math.hypot(cand.s - S.s, (cand.f || 0) - S.f)/0.3*1000), d2 = Math.max(350, Math.abs(cand.ang - S.angle)/45*1000);
+      G.anim = { t0:performance.now(), d1, d2, hold:350, s0:S.s, f0:S.f, a0:S.angle, s1:cand.s, f1:cand.f || 0, a1:cand.ang };
       S.power = cand.power;
       setPhase('aiAnim');
       return;
@@ -1945,10 +1956,11 @@ function aiTick(){
 }
 function aiAnimTick(now){
   const A = G.anim, t = now - A.t0, ease = u => u*u*(3 - 2*u);
-  putStriker(A.s0 + (A.s1 - A.s0)*ease(Math.min(1, t/A.d1)));
+  const u = ease(Math.min(1, t/A.d1));
+  putStriker(A.s0 + (A.s1 - A.s0)*u, A.f0 + (A.f1 - A.f0)*u);
   S.angle = A.a0 + (A.a1 - A.a0)*ease(Math.max(0, Math.min(1, (t - A.d1)/A.d2)));
   if (t >= A.d1 + A.d2 + A.hold){
-    G.anim = null; putStriker(A.s1); S.angle = A.a1;
+    G.anim = null; putStriker(A.s1, A.f1); S.angle = A.a1;
     if (A.rec) launch(A.rec.dA, A.rec.pw);
     else { const m = S.jitter ? DIFF[G.diff[G.turn]].err : 0; fire(S.jAng*m, S.jPow*m); }
   }
@@ -2009,15 +2021,15 @@ cv.addEventListener('pointerdown', e => {
   if (e.button !== 0 || G.phase !== 'aim' || paused) return;
   cv.setPointerCapture(e.pointerId);
   const [x, y] = mouseWorld(e);
-  if (Math.hypot(x - striker.x, y - striker.y) < striker.r) drag = { move:true, d:(striker.x - x)*SIDES[S.side].along[0] + (striker.y - y)*SIDES[S.side].along[1] };
+  if (Math.hypot(x - striker.x, y - striker.y) < striker.r) drag = { move:true, dx:striker.x - x, dy:striker.y - y };
   else { drag = { aim:true }; aimAt(x, y); }
 });
 cv.addEventListener('pointermove', e => {
   if (!drag || G.phase !== 'aim' || paused) return;
   const [x, y] = mouseWorld(e);
   if (drag.aim){ aimAt(x, y); return; }
-  const a = SIDES[S.side].along, c = baseCentre(S.side);
-  putStriker((x - c[0])*a[0] + (y - c[1])*a[1] + drag.d);
+  const a = SIDES[S.side].along, i = SIDES[S.side].inward, c = baseCentre(S.side), wx = x + drag.dx - c[0], wy = y + drag.dy - c[1];
+  putStriker(wx*a[0] + wy*a[1], wx*i[0] + wy*i[1]);
   syncUI();
 });
 const PW_MIN = 0, PW_MAX = 3;
@@ -2058,6 +2070,9 @@ window.addEventListener('keydown', e => {
       if ((e.code === 'KeyA' || e.code === 'KeyD') && !e.metaKey && !e.ctrlKey){
         const st = e.shiftKey ? 0.1 : e.altKey ? 0.001 : 0.01;          // striker slide along the baseline (m)
         putStriker(+(S.s + (e.code === 'KeyD' ? st : -st)).toFixed(4));
+      } else if ((e.code === 'KeyW' || e.code === 'KeyS') && !e.metaKey && !e.ctrlKey){
+        const st = e.shiftKey ? 0.1 : e.altKey ? 0.001 : 0.01;          // striker forward off the baseline, toward the inner square (m)
+        putStriker(S.s, +(S.f + (e.code === 'KeyW' ? st : -st)).toFixed(4));
       } else used = false;
   }
   if (used){ e.preventDefault(); syncUI(); }
@@ -2128,7 +2143,7 @@ function updateUI(){
   const dd = ph === 'menu' ? { human:S.diffB, ai:S.diff } : G.diff, cap = x => x[0].toUpperCase() + x.slice(1);
   $('who-ai').textContent = G.mode === 'net' ? nm('ai') : nm('ai') + ' · ' + cap(dd.ai);
   $('who-human').textContent = G.mode === 'aiai' ? nm('human') + ' · ' + cap(dd.human) : nm('human');
-  $('queenst').textContent = G.queen === 'board' ? 'On the board' : G.queen === 'pending' ? (you ? 'Yours: cover her now!' : `${who} must cover her`)
+  $('queenst').textContent = G.queen === 'board' ? 'On the board' : G.queen === 'out' ? 'Off until the turn ends' : G.queen === 'pending' ? (you ? 'Yours: cover her now!' : `${who} must cover her`)
     : (isYou(G.queen) ? 'Yours' : pos(G.queen)) + ' (covered)';
   $('shotbox').classList.toggle('off', ph !== 'aim');
   $('shotbox').classList.toggle('hidden', !!G.replay || G.mode === 'aiai');        // nobody here aims: replay controls (or nothing) instead
@@ -2163,6 +2178,7 @@ function buildShotBox(){
   ctl('Power', ['↑', '↓'], 0, 3, 0.05, () => S.power, v => { S.power = Math.max(0, Math.min(3, v)); }, v => v.toFixed(2) + ' m/s');
   ctl('Angle', ['←', '→'], -MAX_ANGLE, MAX_ANGLE, 0.1, () => S.angle, v => { S.angle = v; }, fmtA);
   ctl('Striker', ['A', 'D'], -R(), R(), 0.005, () => S.s, v => putStriker(v), v => (v > 0 ? '+' : '') + (v*100).toFixed(1) + ' cm', () => [-R(), R()]);
+  ctl('Forward', ['W', 'S'], 0, fRange(), 0.005, () => S.f, v => putStriker(S.s, v), v => (v*100).toFixed(1) + ' cm', () => [0, fRange()]);
   const go = btn(box, '', shootHuman, 'go');
   go.append('Shoot', el('kbd', { text:'Space' }));
   syncers.push(shotSync);
@@ -2179,6 +2195,8 @@ const CONTROLS = [
     mouse:[['wheel', 'Scroll over the board'], ['drag', 'Drag the Power slider']] },
   { h:'Slide striker', caps:[['A', 'KeyA'], ['D', 'KeyD']], kh:'1 cm per press',
     mouse:[['drag', 'Drag the striker along the baseline']] },
+  { h:'Striker forward', caps:[['W', 'KeyW'], ['S', 'KeyS']], kh:'1 cm per press',
+    mouse:[['drag', 'Drag it forward, up to the inner square']] },
   { h:'Shoot',         caps:[['Space', 'Space', 'wide']], kh:'Enter works too',
     mouse:[['click', 'Click the Shoot button']] },
   { h:'Pause / resume', caps:[['P', 'KeyP']], kh:'Freezes the AI too',

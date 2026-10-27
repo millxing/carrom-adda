@@ -929,7 +929,7 @@ function castRay(px, py, ux, uy, Rs, skipStriker){
 // ====================================================================
 // RENDERING
 // ====================================================================
-const VERSION = '08.5';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
+const VERSION = '08.6';          // bump on each release; tag the commit (git tag v08.1) and add a line to CHANGELOG.md
 document.getElementById('ver').textContent = VERSION;
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const FRAME = 0.09, TAU = Math.PI*2;
@@ -1290,13 +1290,13 @@ function startGame(first = 'human', rec = null, net = null){
   else if (net){
     exitReplay(); netTable(net);
     setMode('net'); G.me = NET.role === 'host' ? 'human' : 'ai'; G.diff = { human:'medium', ai:'medium' };
-    REC = { v:1, id:Date.now(), date:new Date().toISOString(), seed:net.seed, params:Object.assign({}, P),
+    REC = { v:1, rules:2, id:Date.now(), date:new Date().toISOString(), seed:net.seed, params:Object.assign({}, P),
             first, vs:'net', diff:Object.assign({}, G.diff), shots:[], winner:null, pts:0 };
     NET.inbox.length = 0; NET.snaps = {}; NET.waiting = null; NET.live = true;
   } else {
     exitReplay();
     setMode(S.vs); G.diff = { human:S.diffB, ai:S.diff };
-    REC = { v:1, id:Date.now(), date:new Date().toISOString(), seed:(Math.random()*4294967296) >>> 0, params:Object.assign({}, P),
+    REC = { v:1, rules:2, id:Date.now(), date:new Date().toISOString(), seed:(Math.random()*4294967296) >>> 0, params:Object.assign({}, P),
             first, vs:S.vs, diff:Object.assign({}, G.diff), shots:[], winner:null, pts:0 };
   }
   view.flip = G.mode === 'net' && !G.replay && G.me === 'ai'; $('app').classList.toggle('guest', view.flip);
@@ -1305,6 +1305,7 @@ function startGame(first = 'human', rec = null, net = null){
   striker.alive = false;
   rack(first);
   G.queen = 'board'; G.turn = first; G.nShot = 0;
+  G.rules = (rec || REC).rules || 1;               // replays recorded before 08.6 keep the old rules
   PLAYERS[first].color = 'white'; PLAYERS[opponent(first)].color = 'black';      // the breaker plays white
   $('log').textContent = '';                       // each game (or replay) starts a fresh log
   toast(isYou(first) ? 'Your break: you play white' : G.mode === 'ai' || (G.mode === 'net' && !G.replay) ? `${nm(first)} breaks: you play black` : `${nm(first)} breaks and plays white`);
@@ -1380,7 +1381,7 @@ function resolveShot(log){
   // queue a pocketed piece for return to the centre (only if one of that colour is actually in a pocket)
   const ret = c => { if (TOTAL[c] - onBoard(c) - toCentre.filter(x => x === c).length > 0){ toCentre.push(c); return true; } return false; };
   let keep = false, winner = null;
-  const brk = !G.nShot++;
+  const brk = !G.nShot++ && G.rules >= 2;
 
   // the queen, or the opponent's pieces, that this shot left on or behind the opponent's baseline go back to the centre
   const stranded = baselineStranded(me);

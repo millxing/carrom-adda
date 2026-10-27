@@ -4,7 +4,7 @@
 - `index.html` is the one live file, always the latest version. The whole game (HTML, CSS, JS) is in it. Edit it directly.
 - Do NOT create new `carrom_adda_vNN.html` copies for releases. Versions are tracked with git tags (below).
 - `carrom_adda_v08.html` is only a redirect stub to `/` for old links. Never edit it as if it were the game.
-- `carrom_adda_test.html` is a test copy of the game (noindex) for trying rule changes before they go into `index.html`: striker may move forward off the baseline up to the inner square (W/S), and a queen pocketed on the break with a white stays off the table until the breaker's turn ends. When `index.html` changes, port the change there only if asked.
+- `carrom_adda_test.html` is a test copy of the game (noindex) for trying rule changes before they go into `index.html`. As of 08.6 it matches `index.html` (plus the noindex tag). When `index.html` changes, port the change there only if asked.
 - `archive/` holds old versions (v05-v07), noindex, kept for reference only.
 
 ## Hosting

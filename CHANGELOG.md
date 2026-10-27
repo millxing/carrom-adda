@@ -1,5 +1,11 @@
 # Changelog
 
+## 08.6
+- Striker can move forward off the baseline, up to (not over) the inner square: W/S keys, Forward slider, or drag. The AI uses it too.
+- New rule: if the queen goes in on the break together with a white, she stays off the table (and can't be covered) until the breaker's turn ends, then goes back to the centre. Older replays keep the old rule.
+- Inner square is a setting (default 0.28 m from the cushion); default piece diameter 40 mm.
+- Side panel opens on the Watch Log; video-recorder build removed.
+
 ## 08.5
 - AI goes for the queen earlier: when it can pocket her and has an easy cover shot lined up, it takes her instead of waiting until its last piece.
 
