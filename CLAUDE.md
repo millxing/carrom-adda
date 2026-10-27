@@ -4,7 +4,6 @@
 - `index.html` is the one live file, always the latest version. The whole game (HTML, CSS, JS) is in it. Edit it directly.
 - Do NOT create new `carrom_adda_vNN.html` copies for releases. Versions are tracked with git tags (below).
 - `carrom_adda_v08.html` is only a redirect stub to `/` for old links. Never edit it as if it were the game.
-- `carrom_adda_video.html` is a separate recorder build (copy of the game plus a WebCodecs MP4 recorder, needs `vendor/mp4-muxer.js`, must be served over http://localhost). It is not auto-synced: when `index.html` changes, port the change there only if asked.
 - `archive/` holds old versions (v05-v07), noindex, kept for reference only.
 
 ## Hosting
